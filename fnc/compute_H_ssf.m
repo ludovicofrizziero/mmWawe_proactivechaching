@@ -16,6 +16,7 @@
 
 function [H] = compute_H_ssf(f_c,theta_rx,theta_tx,n_rx,n_tx,H_params)
 
+
 %% Parameters
 cdf_of_cluster_num = [0.48,0.761,0.927];
 xi = 4;
@@ -108,4 +109,5 @@ H = zeros (n_rx,n_tx);
 for i = 1:s
         H = H + (small_scale_fading(i) * spatial_matrix_rx(i,:).' * conj(spatial_matrix_tx(i,:)));
 end
+
 end

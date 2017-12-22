@@ -1,0 +1,20 @@
+#!/bin/bash
+#
+# Specifico il progetto associato
+#
+#$ -P 40_Studenti
+#
+# Genera output ed errori nella cartella corrente. 
+# Il file di output sara' test.job.oJOBID
+# quello degli errori sara' invece test.job.eJOBID
+#
+#$ -cwd -m ea -q parallel -l par_cpu=32
+#
+# Non redirigo l'output: ogni esecuzione generera'
+# un file di output diverso
+#
+# Voglio ricevere una mail quando il job termina
+# o in caso venga abortito
+#
+
+matlab -r main.m

@@ -4,6 +4,7 @@
 %
 % Marco Giordani
 % July 2017
+%revised by Frizziero - Suman - Dell'Eva
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 clear all;
@@ -37,26 +38,26 @@ T_tracking = 0.1; % tracking periodicity [s]
 v = 100/3.6; % speed [m/s]
 t_H = 0.3; % udpate of channel instances
 
-road_length = v * T_sim; % positive length of the road [m] %modified by Frizziero
+road_length = 1000;
+usefull_road_length = v * T_sim; % positive length of the road [m] %modified by Frizziero
 road_start = -1000; % negative length of the road [m]
 
 
 %% parameters for simulation
-n_rep_PL = 100;
+n_rep_PL = 10;
 theta_out = -5; %SINR outage threshold [dB]
 theta_out_lin = 10.^(theta_out./10); %SINR outage threshold
 
 %% paramers for road
 d_R = 2.5; 
 W_L = 3.5; % truck length
-N_0 = 2; % # of obstacle lanes
+N_0 = 3; % # of obstacle lanes per direction
 R = d_R + N_0*W_L; % road width
-BS_per_km = 20; %added by Frizziero
+BS_per_km = 15; %added by Frizziero
 
-%UE = [road_length/2 R+ W_L/2]; % position of the UE
-UE = [0 R+W_L/4];
+%UE = [road_length/2 R+ W_L/2]; % position of the UE %removed by Frizziero
 
-%% %%%%%%%%%%%%%%%%%%%%%%% set up parallelization %%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%% set up parallelization %%%%%%%%%%%%%%%%%%%%%%%%%%
 %added by Frizziero
 permutation = randperm(n_rep_PL*length(n_tx)); %to equally spread workload on workers
 rate_final = zeros(length(n_tx),n_rep_PL); 
@@ -86,16 +87,18 @@ end
 iteration_map = iteration_map(permutation);
 antenna_map = antenna_map(permutation);
 rate_tmp = zeros(length(n_tx) * n_rep_PL, 1);
-%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 tic; %added by Frizziero
-%for antenna_idx = 1:length(n_tx) % consider single values of BS density %removed by Frizziero
+%for antenna_idx = 1:length(n_tx) % consider single values of BS density
     %for vector_lambda_bs = BS_per_km/1000  %removed by Frizziero
         parfor iter = 1:n_rep_PL*length(n_tx)  
             
             n_iter = iteration_map(iter);
             antenna_idx = antenna_map(iter);
             fprintf('iteration: %d [%d/%d -> %d/%d]\n', iter, antenna_idx, length(n_tx),n_iter, n_rep_PL);
+            
+            UE = [rand(1,1) * (road_length - usefull_road_length), R - randi(3,1)*W_L + W_L/2]; % choose one of the three lanes randomly %added by Frizziero
             
             BS_all = [];
             %% deployment TOP part of road
@@ -109,13 +112,13 @@ tic; %added by Frizziero
             
             BS_all = [BS_top; BS_bottom];
          
-            n_BS_all = size(BS_all,1);
+            n_BS_all = n_BS_top + n_BS_bottom
             BS_distance = abs( sqrt( (BS_all(:,1) - UE(1)).^2 + (BS_all(:,2) - UE(2)).^2 ) ); % new distance from BSs to current position of the UE
             
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             %% PRINT SCENARIO (if enabled)
             if print_scenario
-                hold on
+                %hold on
                 scatter(BS_all(:,1),BS_all(:,2),'*r'); hold on;
                 scatter(UE(1),UE(2),'dm')
             end
@@ -123,10 +126,11 @@ tic; %added by Frizziero
             
             %% Find PL and PL states, according to the distance
             BS_PL = zeros(1,n_BS_all);
-            BS_PL = 10.^((32.4 + 21.6*log10(BS_distance) + 20*log10(f/1e9))/10)';
-         
+            %BS_PL = 10.^((32.4 + 21.6*log10(BS_distance) + 20*log10(f/1e9))/10)';
+          %modified by F. S. E.
+            BS_PL = 10.^((32.4 + 20*log10(BS_distance/1e3) + 20*log10(f/1e6))/10)';
+            
             %% MAKE ATTACHMENT DECISION (max. imparing PL, accoridng to the PL defined in Eq. (2))
-            x_BS = BS_all(1,:); % x-coordinates of all BSs
             [serving_PL, serving_BS_idx] = min(BS_PL); % accoring to Assumption 3.4 and the definition of impariment PL in Eq. (2)
             distance_serving_BS = abs(BS_distance(serving_BS_idx)); % distance from UE in (0,0) to current serving BS
             
@@ -209,7 +213,7 @@ tic; %added by Frizziero
                     H = cell(n_BS_all,1);                    
                     for bs_idx = 1:n_BS_all
                         pos_bs = BS_all(bs_idx,:);
-                        [tmp_AoA tmp_AoD] = find_angles(ue_test_new_position,pos_bs);
+                        [tmp_AoA, tmp_AoD] = find_angles(ue_test_new_position,pos_bs);                 
                         AoA(bs_idx) = tmp_AoA; % AoA of 'ue' with respect to 'bs'
                         AoD(bs_idx) = tmp_AoD;
                         H{bs_idx} = compute_H_ssf(f,AoA(bs_idx),AoD(bs_idx),n_rx(antenna_idx),n_tx(antenna_idx), H_params{bs_idx}); % channel, keeping same small scale fading params

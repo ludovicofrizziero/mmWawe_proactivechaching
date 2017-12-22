@@ -7,6 +7,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [H H_params] = compute_H_mobility(f_c,theta_rx,theta_tx,n_rx,n_tx)
+
 %% Parameters
 cdf_of_cluster_num = [0.48,0.761,0.927];
 xi = 4;
@@ -123,7 +124,7 @@ end
 
 %% Computation of H matrix
 
-H = zeros (n_rx,n_tx);
+H = zeros (n_rx, n_tx);
 
 for i = 1:s
     H = H + (small_scale_fading(i) * spatial_matrix_rx(i,:).' * conj(spatial_matrix_tx(i,:)));

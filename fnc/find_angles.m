@@ -16,7 +16,7 @@ else
     AoD = atan(pos_y/pos_x) + 2*pi;
 end
 
-AoA = -AoD;
+AoA = pi-AoD; %modified by Dell'Eva
 
 end
 
