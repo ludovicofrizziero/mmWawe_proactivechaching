@@ -126,9 +126,7 @@ tic; %added by Frizziero
             
             %% Find PL and PL states, according to the distance
             BS_PL = zeros(1,n_BS_all);
-            %BS_PL = 10.^((32.4 + 21.6*log10(BS_distance) + 20*log10(f/1e9))/10)';
-          %modified by F. S. E.
-            BS_PL = 10.^((32.4 + 20*log10(BS_distance/1e3) + 20*log10(f/1e6))/10)';
+            BS_PL = 10.^((32.4 + 21.6*log10(BS_distance) + 20*log10(f/1e9))/10)';
             
             %% MAKE ATTACHMENT DECISION (max. imparing PL, accoridng to the PL defined in Eq. (2))
             [serving_PL, serving_BS_idx] = min(BS_PL); % accoring to Assumption 3.4 and the definition of impariment PL in Eq. (2)
