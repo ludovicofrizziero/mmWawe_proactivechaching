@@ -6,7 +6,7 @@
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [spatial_sig] = compute_spatial_signature_ssf (K, L, theta, phi, n,horiz_angle,subpath_angle)
+function [spatial_sig] = compute_spatial_signature_ssf (K, L, theta, phi, n, horiz_angle, subpath_angle)
 
 %% parameters
 rms_horiz = 10.2*2*pi/360;                                              % BS cluster rms angular spread for the horizzontal component
