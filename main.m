@@ -1,5 +1,13 @@
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%Simulate a mmWave scenario with proactive caching.
+%
+%Authors: Frizziero - Suman - Dell'Eva
+%
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 clear all;
-%close all;
+close all;
 clc;
 
 seed = sum(clock);
@@ -186,12 +194,18 @@ for i = 1:length(n_tx_array)
 end
 
 tofile =    [   antenna_idx_vec; iter_vec;    ...
-                reshape(min_rate_final / 1e9, [1, length(iter_vec)]);  ...
-                reshape(mean_rate_final / 1e9, [1, length(iter_vec)]);  ...
-                reshape(max_rate_final / 1e9, [1, length(iter_vec)]);  ...
-                reshape(std_rate_final / 1e9, [1, length(iter_vec)])   ...
+                [min_rate_final(1, :), min_rate_final(2, :), min_rate_final(3, :) ]  / 1e9;  ...
+                [mean_rate_final(1, :), mean_rate_final(2, :), mean_rate_final(3, :) ]  / 1e9;  ...
+                [max_rate_final(1, :), max_rate_final(2, :), max_rate_final(3, :) ]  / 1e9;  ...
+                [std_rate_final(1, :), std_rate_final(2, :), std_rate_final(3, :) ]  / 1e9   ...
             ];
 
 fname = sprintf('rate_%dBSperKM.txt', BS_per_km);
 fileID = fopen(fname,'w');
 fprintf(fileID, formatSpec, tofile);
+fclose(fileID);
+
+%print a fast report of the simulation
+fprintf('antenna configuration 1 mean rate: %2.6f Gbps\n', mean(mean_rate_final(1, :)) / 1e9);
+fprintf('antenna configuration 2 mean rate: %2.6f Gbps\n', mean(mean_rate_final(2, :)) / 1e9);
+fprintf('antenna configuration 3 mean rate: %2.6f Gbps\n', mean(mean_rate_final(3, :)) / 1e9);
