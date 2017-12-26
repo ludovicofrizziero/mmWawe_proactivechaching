@@ -44,10 +44,10 @@ road_length = 1000;
 usefull_road_length = v * T_sim; % positive length of the road [m] %modified by Frizziero
 road_start = -1000; % negative length of the road [m]
 d_R = 2.5; 
-W_L = 3.5; % truck length
+W_L = 3.75; % truck length
 N_0 = 3; % # of obstacle lanes per direction
 R = d_R + N_0*W_L; % road width
-BS_per_km = 15;
+BS_per_km = 20;
 
 %% %%%%%%%%%%%%%%%%%%%%%%% set up parallelization %%%%%%%%%%%%%%%%%%%%%%%%%%
 permutation = randperm(n_rep_PL*length(n_tx_array)); %to equally spread workload on workers
@@ -104,20 +104,22 @@ parfor iter = 1:n_rep_PL*length(n_tx_array)
     shared_data.UE = UE;
     UE.sharedData = shared_data;
     
-    
-    n_BS_top = poissrnd(vector_lambda_bs * (road_length),1,1); % number of BSs
-    BS_top = [unifrnd(0, road_length, n_BS_top, 1) , 2 * R * ones(n_BS_top,1)]; %position of BSs
+    BS_distance_avg = 1000/BS_per_km;
+    delta = ceil(BS_distance_avg/8);
+    BS_bottom = zeros(BS_per_km,2);
+    BS_top = zeros(BS_per_km,2);
+    for i = 1:BS_per_km
+        BS_bottom(i,:) = [(i-1)*BS_distance_avg+unifrnd(-delta,delta) , 0];
+        BS_top(i,:) = [(i-1)*BS_distance_avg+unifrnd(-delta,delta) , 0];
+    end
 
-    n_BS_bottom = poissrnd(vector_lambda_bs * (road_length),1,1); % number of BSs
-    BS_bottom = [unifrnd(0, road_length, n_BS_bottom, 1) , zeros(n_BS_bottom,1)]; %position of BSs
-             
-    allBS = cell(n_BS_top + n_BS_bottom, 1);
-    for i = 1:n_BS_top
+    allBS = cell(2*BS_per_km, 1);
+    for i = 1:BS_per_km
         allBS{i} = BaseStation(n_tx, f, BW, BS_top(i, :), t_H, T_tracking, n_users); 
     end
     
-    for i = 1:n_BS_bottom
-        allBS{i + n_BS_top} = BaseStation(n_tx, f, BW, BS_bottom(i, :), t_H, T_tracking, n_users); 
+    for i = 1:BS_per_km
+        allBS{i + BS_per_km} = BaseStation(n_tx, f, BW, BS_bottom(i, :), t_H, T_tracking, n_users); 
     end
     
     shared_data.servingBS = allBS{1}; %just for initialization
