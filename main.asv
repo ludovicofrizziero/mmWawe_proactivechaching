@@ -88,7 +88,7 @@ rate_tmp = cell(length(n_tx_array) * n_rep_PL, 1);
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 tic; 
-parfor iter = 1:n_rep_PL*length(n_tx_array)  
+for iter = 1:n_rep_PL*length(n_tx_array)  
 
     n_iter = iteration_map(iter);    
     antenna_idx = antenna_map(iter);
@@ -96,7 +96,7 @@ parfor iter = 1:n_rep_PL*length(n_tx_array)
     n_rx = n_rx_array(antenna_idx);
     fprintf('iteration: %d [%d/%d -> %d/%d]\n', iter, antenna_idx, length(n_tx_array),n_iter, n_rep_PL);      
     
-    ue_pos = [rand(1,1) * (road_length - usefull_road_length), R - randi(3,1)*W_L + W_L/2, 0]; %(x,y,z) position of UE
+    ue_pos = [rand(1,1) * (road_length - usefull_road_length), R - randi(3,1)*W_L + W_L/2, 0];
     shared_data = BaseStation.sharedData;
     UE = UserEquipment(n_rx, f, ue_pos, v, T_tracking);
     shared_data.UE = UE;
@@ -104,11 +104,11 @@ parfor iter = 1:n_rep_PL*length(n_tx_array)
     
     
     n_BS_top = poissrnd(vector_lambda_bs * (road_length),1,1); % number of BSs
-    BS_top = [unifrnd(0, road_length, n_BS_top, 1) , 2 * R * ones(n_BS_top,1), 8 + zeros(n_BS_top, 1)]; %(x,y,z) position of BSs
+    BS_top = [unifrnd(0, road_length, n_BS_top, 1) , 2 * R * ones(n_BS_top,1), zeros(n_BS_top, 1)]; %position of BSs
 
     n_BS_bottom = poissrnd(vector_lambda_bs * (road_length),1,1); % number of BSs
-    BS_bottom = [unifrnd(0, road_length, n_BS_bottom, 1) , zeros(n_BS_bottom,1), 8 + zeros(n_BS_bottom, 1)]; %(x,y,z) position of BSs             
-    
+    BS_bottom = [unifrnd(0, road_length, n_BS_bottom, 1) , zeros(n_BS_bottom,1), 0]; %position of BSs
+             
     allBS = cell(n_BS_top + n_BS_bottom, 1);
     for i = 1:n_BS_top
         allBS{i} = BaseStation(n_tx, f, BW, BS_top(i, :), t_H, T_tracking, n_users); 
@@ -144,7 +144,7 @@ parfor iter = 1:n_rep_PL*length(n_tx_array)
         avg_SINR = SINR_num ./ SINR_den; 
         
         %consider rate for the n-users loaded BS
-        rate(index_internal) = shared_data.servingBS.BW * log2(1+avg_SINR) %/ shared_data.servingBS.n;   %OUTPUT of this Monte Carlo iteration
+        rate(index_internal) = shared_data.servingBS.BW * log2(1+avg_SINR) / shared_data.servingBS.n;   %OUTPUT of this Monte Carlo iteration
         index_internal = index_internal + 1; 
     end
     

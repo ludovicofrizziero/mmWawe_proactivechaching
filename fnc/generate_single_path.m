@@ -26,7 +26,7 @@ s = sqrt(n);
 for j = 1 : s
     tmp = b*(j-1);
     for k = 1 : s
-        spatial_signature(index) = exp(a*(k-1) + tmp);
+        spatial_signature(index) = exp(a*(k-1) + tmp); 
         index = index + 1;
     end
 end

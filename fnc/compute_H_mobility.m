@@ -6,14 +6,17 @@
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [H, H_params] = compute_H_mobility(f_c,theta_rx,theta_tx,n_rx,n_tx, BW)
+function [H, H_params] = compute_H_mobility(f_c, angles_rx, angles_tx, ant_pos_rx, ant_pos_tx, BW)
 
 %% Parameters
 cdf_of_cluster_num = [0.48,0.761,0.927];
 xi = 4;
 r_tau = 2.8;
-phi_rx = 0;                                                                % (Note 3)
-phi_tx = 0;                                                                % (Note 3)
+phi_rx = angles_rx(2);                                                                % (Note 3)
+phi_tx = angles_tx(2);                                                                % (Note 3)
+theta_rx = angles_rx(1);
+theta_tx = angles_tx(1);
+lambda = physconst('lightspeed') / f_c;
 %BW = 1*10^9;                                                               % BW
 %f_c = 28*10^9;                                                             % central frequency
 %speed = 0;                                                                 % Do not consider velocity in this model
@@ -117,8 +120,8 @@ subpath_delay = sort(subpath_delay);
 
 %% Computation of spatial signatures (matrix, one row for each subpath in each cluster)
 
-[spatial_matrix_tx, horiz_angle_tx, subpath_angle_tx] = compute_spatial_signature (K, L, theta_tx, phi_tx, n_tx);
-[spatial_matrix_rx, horiz_angle_rx, subpath_angle_rx] = compute_spatial_signature (K, L, theta_rx, phi_rx, n_rx);
+[spatial_matrix_tx, horiz_angle_tx, subpath_angle_tx] = compute_spatial_signature (K, L, theta_tx, phi_tx, ant_pos_tx, lambda);
+[spatial_matrix_rx, horiz_angle_rx, subpath_angle_rx] = compute_spatial_signature (K, L, theta_rx, phi_rx, ant_pos_rx, lambda);
 
 %% Doppler shift
 %phi_l = mod(reshape(subpath_angle_rx(find(subpath_angle_rx~=0)),[1,s]) - motion_direction , 2*pi);
@@ -137,24 +140,13 @@ small_scale_fading = sqrt(power_fraction) ./ delay_scf;
 
 %% Computation of H matrix
 
-H = zeros (n_rx, n_tx);
+H = zeros (max(size(ant_pos_rx)), max(size(ant_pos_tx)));
 
 for i = 1:s
-    H = H + (small_scale_fading(i) * spatial_matrix_rx(i,:).' * conj(spatial_matrix_tx(i,:)));
+    H = H + (small_scale_fading(i) * spatial_matrix_rx(:, i) * spatial_matrix_tx(:, i)');
 end
 
 H_params = struct('K',K);
-% H_params = setfield(H_params,'cluster_power_fraction',cluster_power_fraction);
-% H_params = setfield(H_params,'cluster_dealy',cluster_dealy);
-% H_params = setfield(H_params,'subpath_delay',subpath_delay);
-% H_params = setfield(H_params,'spatial_matrix_tx',spatial_matrix_tx);
-% H_params = setfield(H_params,'spatial_matrix_rx',spatial_matrix_rx);
-% H_params = setfield(H_params,'power_fraction',power_fraction);
-% H_params = setfield(H_params,'subpath_angle_tx',subpath_angle_tx);
-% H_params = setfield(H_params,'subpath_angle_rx',subpath_angle_rx);
-% H_params = setfield(H_params,'horiz_angle_tx',horiz_angle_tx);
-% H_params = setfield(H_params,'horiz_angle_rx',horiz_angle_rx);
-% H_params = setfield(H_params,'L',L);
 H_params.('cluster_power_fraction') = cluster_power_fraction;
 H_params.('cluster_dealy') = cluster_dealy;
 H_params.('subpath_delay') = subpath_delay;

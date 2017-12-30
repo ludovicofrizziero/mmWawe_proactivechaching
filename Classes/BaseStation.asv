@@ -85,7 +85,7 @@ classdef BaseStation < handle
             
             if mod(sim_time, BS.tt) < 1e-10
                 %update Beam Forming vector, keep channel params, update only ssf values
-                BS_distance = norm(BS.sharedData.UE.pos - BS.pos) / 1000; %Km
+                BS_distance = norm(BS.sharedData.UE.pos - BS.pos);
                 BS.PL = 10.^((32.4 + 21.6*log10(BS_distance) + 20*log10(BS.f/1e9))/10);
                 BS.find_AoA_AoD();
                 BS.H = compute_H_ssf(BS.f, BS.sharedData.UE.AoA, BS.AoD, BS.sharedData.UE.ant_pos, BS.ant_pos, BS.H_params, BS.BW);
@@ -106,14 +106,13 @@ classdef BaseStation < handle
                                       
             BS.GAIN = (abs((BS.sharedData.UE.BF)' * (BS.H) * (BS.BF)).^2); %this station is interfering if it is not equal to sharedData.servingBS
             
-%             %for debug
-%             if isequal(BS, BS.sharedData.servingBS) && BS.ant_arr > 16 
-%                 disp('----')
-%                 disp(abs(BS.sharedData.UE.BF' * BS.H * BS.BF)^2)
-%                 disp('----')
-%             elseif BS.ant_arr > 16
-%                 disp(abs(BS.sharedData.UE.BF' * BS.H * BS.BF)^2)
-%             end
+            if isequal(BS, BS.sharedData.servingBS) && BS.ant_arr > 16 %for debug
+                disp('----')
+                disp(abs(BS.sharedData.UE.BF' * BS.H * BS.BF)^2)
+                disp('----')
+            elseif BS.ant_arr > 16
+                disp(abs(BS.sharedData.UE.BF' * BS.H * BS.BF)^2)
+            end
             
             if mod(sim_time, 1) < 1e10
                 %update every 1 sec the random n of users connected to this station
