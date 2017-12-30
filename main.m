@@ -144,7 +144,7 @@ parfor iter = 1:n_rep_PL*length(n_tx_array)
         avg_SINR = SINR_num ./ SINR_den; 
         
         %consider rate for the n-users loaded BS
-        rate(index_internal) = shared_data.servingBS.BW * log2(1+avg_SINR) %/ shared_data.servingBS.n;   %OUTPUT of this Monte Carlo iteration
+        rate(index_internal) = shared_data.servingBS.BW * log2(1+avg_SINR) / shared_data.servingBS.n;   %OUTPUT of this Monte Carlo iteration
         index_internal = index_internal + 1; 
     end
     

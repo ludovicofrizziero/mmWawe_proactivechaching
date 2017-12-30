@@ -124,6 +124,8 @@ classdef BaseStation < handle
     
     methods (Access = private)
         function find_AoA_AoD(BS)
+            %for reference see DOC/BeamForming/angles.jpg
+            
             %change point of view from the world origin to the BS's coord system
             new_ue_pos = BS.sharedData.UE.pos - BS.pos;     
             new_ue_pos = new_ue_pos / norm(new_ue_pos);
@@ -133,7 +135,7 @@ classdef BaseStation < handle
             tmp = cross([1, 0, 0], [new_ue_pos(1), new_ue_pos(2), 0]);
             s = sign(tmp(3));
             
-            %find azimut angle (with respect to x axis, positive toward y axis)            
+            %find azimut angle (with respect to x axis, positive toward y axis)               
             if theta <= pi/2 && s > 0
                 BS.AoD = [theta, phi];
             elseif theta < pi/2 && s < 0

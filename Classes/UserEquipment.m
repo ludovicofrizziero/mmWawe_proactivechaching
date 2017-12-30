@@ -64,6 +64,8 @@ classdef UserEquipment < handle
     
     methods (Access = private)
         function find_AoD(UE)
+            %for reference see DOC/BeamForming/angles.jpg
+            
             %change point of view from the world origin to the BS's system
             new_ue_pos = UE.pos - UE.sharedData.servingBS.pos;    
             new_ue_pos = new_ue_pos / norm(new_ue_pos);

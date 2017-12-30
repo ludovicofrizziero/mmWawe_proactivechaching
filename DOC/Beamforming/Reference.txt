@@ -1,0 +1,5 @@
+Refer to 
+
+	http://www.antenna-theory.com/arrays/weights/mmse4.php
+
+for a fast guide on antennas theory.
