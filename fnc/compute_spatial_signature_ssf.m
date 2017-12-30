@@ -1,7 +1,9 @@
 %% Function to compute spacial signature for channel matrix H
 %
-% Giordani - Rebato
+% Frizziero
+% 12 / 27 /2017
 %
+% Giordani - Rebato
 % 12/06/2015
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

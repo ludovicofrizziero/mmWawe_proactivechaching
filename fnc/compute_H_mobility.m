@@ -1,7 +1,9 @@
 %% Test to compute the channel matrix H following ns-3 model
 %
-% Giordani - Rebato
+% Frizziero
+% 12 / 27 /2017
 %
+% Giordani - Rebato
 % 12/06/2015
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

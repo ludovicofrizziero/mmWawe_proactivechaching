@@ -8,8 +8,10 @@
 % parameter, all the other parameters are kept from previous computations
 % of the H matrix.
 %
-% Giordani - Rebato
+% Frizziero
+% 12 / 27 /2017
 %
+% Giordani - Rebato
 % 12/06/2015
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

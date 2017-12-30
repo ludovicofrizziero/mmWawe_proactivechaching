@@ -1,10 +1,10 @@
 %%
 % Frizziero
-% AoA: angle of arrival of the wawe.
+%
+% angles: angle of arrival of the wawe (azimut, elevation).
 % lambda: wawelength.
 % ant_pos: array [M x 1] containing the (x,y,z) position of each antenna (that are M in total)
 %       expressed in wawelengths.
-% inv_cov_mat: inverse of the spatial covariance matrix (M x M).
 %%
 function [w] = compute_BF_vector2(angles, lambda, ant_pos)
     sigma_noise = 0.01;
@@ -16,7 +16,7 @@ function [w] = compute_BF_vector2(angles, lambda, ant_pos)
     tmp = R \ v;
     w = tmp / (v' * tmp); %MVDR method [R^-1 * v * (v^H * R^-1 * v)^-1]
     
-    %w' * steer_vec %array response. Should be 1+0i
+    %w' * v  %array response. Should be 1+0i, check for debug if needed
     
     %% possible extension:
     % w = inv(R) * C / (C' * inv(R) * C) * F

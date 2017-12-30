@@ -138,7 +138,7 @@ parfor iter = 1:n_rep_PL*length(n_tx_array)
             SINR_interference = SINR_interference + (allBS{i}.GAIN / allBS{i}.PL) * 0.5;    
         end
 
-        SINR_num = shared_data.servingBS.GAIN / shared_data.servingBS.PL ; % numerator of SINR (depends on the beamwidth)
+        SINR_num = shared_data.servingBS.GAIN / shared_data.servingBS.PL; % numerator of SINR (depends on the beamwidth)
         SINR_den = SINR_interference + thermal_noise;
 
         avg_SINR = SINR_num ./ SINR_den; 
