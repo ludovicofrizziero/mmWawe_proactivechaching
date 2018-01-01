@@ -136,17 +136,43 @@ parfor iter = 1:n_rep_PL*length(n_tx_array)
         SINR_interference = -(shared_data.servingBS.GAIN / shared_data.servingBS.PL) * 0.5; % we wont such gain here, but in the for loop we sum it for "error"
         for i = 1:length(allBS)
             SINR_interference = SINR_interference + (allBS{i}.GAIN / allBS{i}.PL) * 0.5;    
-        end
-
+        end       
+        
         SINR_num = shared_data.servingBS.GAIN / shared_data.servingBS.PL; % numerator of SINR (depends on the beamwidth)
         SINR_den = SINR_interference + thermal_noise;
 
         avg_SINR = SINR_num ./ SINR_den; 
         
+%         %% for debug
+%         D(index_internal) = norm(UE.pos - shared_data.servingBS.pos) / 1000;
+%         PL(index_internal) = shared_data.servingBS.PL;
+%         G(index_internal) = shared_data.servingBS.GAIN / shared_data.servingBS.PL;
+%         ASINR(index_internal) = avg_SINR;
+%         %%
+        
         %consider rate for the n-users loaded BS
         rate(index_internal) = shared_data.servingBS.BW * log2(1+avg_SINR) / shared_data.servingBS.n;   %OUTPUT of this Monte Carlo iteration
         index_internal = index_internal + 1; 
     end
+    
+%     %% for debug
+%     figure;
+%     plot(PL);
+%     title('Path Loss');
+%     figure;
+%     plot(G);
+%     title('Gain');
+%     figure;
+%     plot(D);
+%     title('Distance');   
+%     figure;
+%     plot(ASINR);
+%     title('AVG SINR');
+%     figure;
+%     plot(rate);
+%     title('Rate');
+%     %%
+    
     
     rate_tmp{iter} = [min(rate), mean(rate), max(rate), std(rate)]; % entire OUTPUT of the Monte Carlo method
 end

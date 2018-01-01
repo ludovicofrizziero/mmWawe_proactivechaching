@@ -17,7 +17,7 @@ classdef UserEquipment < handle
         sharedData 
         pos  
         ant_arr
-        BF %Beam Forming vector
+        BF %Beam Forming object
         vel
         AoD
         AoA
@@ -29,9 +29,9 @@ classdef UserEquipment < handle
             UE.pos = position;
             UE.vel = vel;
             UE.tt = t_tracking;   
-            UE.lambda = physconst('lightspeed') / f;
+            UE.lambda = physconst('lightspeed') / f;            
             d = 0.5; %assume 0.5 wawelength distance
-            UE.ant_pos = zeros(UE.ant_arr, 3);
+            UE.ant_pos = zeros(UE.ant_arr, 3);           
             ind = 1;
             for i = 1 : sqrt(UE.ant_arr)
                 for j = 1 : sqrt(UE.ant_arr)
@@ -39,13 +39,14 @@ classdef UserEquipment < handle
                     ind = ind + 1;
                 end
             end
+            
+            UE.BF = MVDR_Beamforming(0.01, UE.lambda, UE.ant_pos);
         end        
         
         function init(UE)
             %init  
-            UE.find_AoD()
-            %UE.BF = compute_BF_vector(UE.ant_arr, UE.AoD);
-            UE.BF = compute_BF_vector2(UE.AoA, UE.lambda, UE.ant_pos);
+            UE.find_AoA()
+            UE.BF.update_state(UE.AoA);
         end
         
         function update(UE, sim_time)
@@ -54,16 +55,15 @@ classdef UserEquipment < handle
             
             if mod(sim_time, UE.tt) < 1e-10
                 %update Beam Forming vector
-                UE.find_AoD()
-                %UE.BF = compute_BF_vector(UE.ant_arr, UE.AoD);
-                UE.BF = compute_BF_vector2(UE.AoA, UE.lambda, UE.ant_pos);                                     
+                UE.find_AoA()
+                UE.BF.update_state(UE.AoA);
             end
             
         end
     end
     
     methods (Access = private)
-        function find_AoD(UE)
+        function find_AoA(UE)
             %for reference see DOC/BeamForming/angles.jpg
             
             %change point of view from the world origin to the BS's system

@@ -14,6 +14,8 @@ classdef BaseStation < handle
         n
         PL %path loss to the user
         C %channel state object
+        H %channel matrix
+        H_params %stored channel matrix parameters
         f %carrier frequency
         BW %bandwidth
         AoA
@@ -28,7 +30,7 @@ classdef BaseStation < handle
         lambda %length of the carrier wawe
         ant_arr
         pos      
-        BF %beam forming object
+        BF %beam forming vector
         GAIN
     end
     
@@ -42,7 +44,7 @@ classdef BaseStation < handle
             BS.f = f;
             BS.BW = BW;     
             BS.lambda = physconst('lightspeed') / f;
-            BS.C = mmChannelModel(BW, f, 4, 2.8);            
+            BS.C = mmChannelModel(BW,);
             d = 0.15; % (m) spacing between antenna array elements 
             ind = 1;
             BS.ant_pos = zeros(BS.ant_arr, 3);
@@ -53,23 +55,22 @@ classdef BaseStation < handle
                 end
             end          
             
-            BS.BF = MVDR_Beamforming(0.01, BS.lambda, BS.ant_pos);            
         end
         
         function init(BS)
             %initialization
             BS_distance = norm(BS.sharedData.UE.pos - BS.pos) / 1000;
             BS.PL = 10.^((32.4 + 21.6*log10(BS_distance) + 20*log10(BS.f/1e9))/10)';
-            BS.find_AoD();            
-            BS.C.update_channel_state(BS.sharedData.UE.AoA, BS.AoD, BS.sharedData.UE.ant_pos, BS.ant_pos, true);
+            BS.find_AoD();
+            [BS.H, BS.H_params] = compute_H_mobility(BS.f, BS.sharedData.UE.AoA, BS.AoD, BS.sharedData.UE.ant_pos, BS.ant_pos, BS.BW);
             
             BS.handin();
             if isequal(BS, BS.sharedData.servingBS)                
-                BS.BF.update_state(BS.AoD);               
-                BS.GAIN = (abs((BS.sharedData.UE.BF)' * (BS.sharedData.servingBS.C) * (BS.BF)).^2); %this station is transmitting
+                BS.BF = compute_BF_vector2(BS.AoD, BS.lambda, BS.ant_pos);               
+                BS.GAIN = (abs(conj(BS.sharedData.UE.BF).' * (BS.sharedData.servingBS.H) * (BS.BF)).^2); %this station is transmitting
             else        
-                BS.BF.update_state([2*pi*rand(1), 2*pi*rand(1)]);
-                BS.GAIN = (abs((BS.sharedData.UE.BF)' * (BS.C) * (BS.BF)).^2); %this station is interfering
+                BS.BF = compute_BF_vector2([2*pi*rand(1), 2*pi*rand(1)], BS.lambda, BS.ant_pos);
+                BS.GAIN = (abs(conj(BS.sharedData.UE.BF).' * (BS.H) * (BS.BF)).^2); %this station is interfering
             end
                        
             BS.n = poissrnd(BS.mean_n);     
@@ -79,7 +80,7 @@ classdef BaseStation < handle
             if mod(sim_time, BS.th) < 1e-10
                 %update all channel info
                 BS.find_AoD();
-                BS.C.update_channel_state(BS.sharedData.UE.AoA, BS.AoD, BS.sharedData.UE.ant_pos, BS.ant_pos, true);
+                [BS.H, BS.H_params] = compute_H_mobility(BS.f, BS.sharedData.UE.AoA, BS.AoD, BS.sharedData.UE.ant_pos, BS.ant_pos, BS.BW);
             end
             
             if mod(sim_time, BS.tt) < 1e-10
@@ -87,21 +88,21 @@ classdef BaseStation < handle
                 BS_distance = norm(BS.sharedData.UE.pos - BS.pos) / 1000; %Km
                 BS.PL = 10.^((32.4 + 21.6*log10(BS_distance) + 20*log10(BS.f/1e9))/10);
                 BS.find_AoD();
-                BS.C.update_channel_state(BS.sharedData.UE.AoA, BS.AoD, BS.sharedData.UE.ant_pos, BS.ant_pos, false);
-
+                BS.H = compute_H_ssf(BS.f, BS.sharedData.UE.AoA, BS.AoD, BS.sharedData.UE.ant_pos, BS.ant_pos, BS.H_params, BS.BW);
+                
                 BS.handin();
                 if isequal(BS, BS.sharedData.servingBS)                    
-                    BS.BF.update_state(BS.AoD);
-                else                    
-                    BS.BF.update_state([2*pi*rand(1), 2*pi*rand(1)]);
+                    BS.BF = compute_BF_vector2(BS.AoD, BS.lambda, BS.ant_pos);
+                else                   
+                    BS.BF = compute_BF_vector2([2*pi*rand(1), 2*pi*rand(1)], BS.lambda, BS.ant_pos);
                 end
             else
                 %don't update Beam Forming vector, keep channel params, update only ssf values
                 BS.find_AoD();
-                BS.C.update_channel_state(BS.sharedData.UE.AoA, BS.AoD, BS.sharedData.UE.ant_pos, BS.ant_pos, false);
+                BS.H = compute_H_ssf(BS.f, BS.sharedData.UE.AoA, BS.AoD, BS.sharedData.UE.ant_pos, BS.ant_pos, BS.H_params, BS.BW);
             end
                                       
-            BS.GAIN = (abs((BS.sharedData.UE.BF)' * (BS.C) * (BS.BF)).^2); %this station is interfering if it is not equal to sharedData.servingBS            
+            BS.GAIN = (abs((BS.sharedData.UE.BF)' * (BS.H) * (BS.BF)).^2); %this station is interfering if it is not equal to sharedData.servingBS            
             
             if mod(sim_time, 1) < 1e10
                 %update every 1 sec the random n of users connected to this station
@@ -144,8 +145,8 @@ classdef BaseStation < handle
         end
         
         function handover(BS, to_next_BS)
-            BS.BF.update_state([2*pi*rand(1), 2*pi*rand(1)]);
-            BS.GAIN = (abs((BS.sharedData.UE.BF)' * (BS.C) * (BS.BF)).^2); %this station is interfering, needed here to avoid errors
+            BS.BF = compute_BF_vector2([2*pi*rand(1), 2*pi*rand(1)], BS.lambda, BS.ant_pos);
+            BS.GAIN = (abs(conj(BS.sharedData.UE.BF).' * (BS.H) * (BS.BF)).^2); %this station is interfering, needed here to avoid errors
         end
     end
     
