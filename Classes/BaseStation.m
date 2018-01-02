@@ -59,7 +59,8 @@ classdef BaseStation < handle
         function init(BS)
             %initialization
             BS_distance = norm(BS.sharedData.UE.pos - BS.pos) / 1000;
-            BS.PL = 10.^((32.4 + 21.6*log10(BS_distance) + 20*log10(BS.f/1e9))/10)';
+            %BS.PL = 10.^((32.4 + 20*log10(BS_distance) + 20*log10(BS.f/1e9))/10);
+            BS.PL = 10^(22.7 + 36.7 * log10(BS_distance * 1000) + 26 * log10(BS.f / 1e9) / 10);
             BS.find_AoD();            
             BS.C.update_channel_state(BS.sharedData.UE.AoA, BS.AoD, BS.sharedData.UE.ant_pos, BS.ant_pos, true);
             
@@ -85,7 +86,8 @@ classdef BaseStation < handle
             if mod(sim_time, BS.tt) < 1e-10
                 %update Beam Forming vector, keep channel params, update only ssf values
                 BS_distance = norm(BS.sharedData.UE.pos - BS.pos) / 1000; %Km
-                BS.PL = 10.^((32.4 + 21.6*log10(BS_distance) + 20*log10(BS.f/1e9))/10);
+                %BS.PL = 10.^((32.4 + 20*log10(BS_distance) + 20*log10(BS.f/1e9))/10);
+                BS.PL = 10^(22.7 + 36.7 * log10(BS_distance * 1000) + 26 * log10(BS.f / 1e9) / 10);
                 BS.find_AoD();
                 BS.C.update_channel_state(BS.sharedData.UE.AoA, BS.AoD, BS.sharedData.UE.ant_pos, BS.ant_pos, false);
 

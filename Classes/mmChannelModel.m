@@ -91,7 +91,7 @@ classdef mmChannelModel < handle
             
             %% Subpath dealy
             index = 1;
-            T = 1/self.BW;
+            T = 1 / self.BW;
             subpath_delay = rand(1, K * s);
             for k = 1:K
                 for l=1:L(k)
@@ -119,24 +119,29 @@ classdef mmChannelModel < handle
             small_scale_fading = sqrt(power_fraction) ./ delay_scf;
             
             %% Computation of H matrix
-            self.H = zeros(max(size(ant_pos_rx)), max(size(ant_pos_tx)));
+%             H_ = zeros(max(size(ant_pos_rx)), max(size(ant_pos_tx)));
+% 
+%             for i = 1:s
+%                 H_ = H_ + (small_scale_fading(i) * spatial_matrix_rx(:, i) * spatial_matrix_tx(:, i)');
+%             end            
+%             self.H = H_; %for speed
 
-            for i = 1:s
-                self.H = self.H + (small_scale_fading(i) * spatial_matrix_rx(:, i) * spatial_matrix_tx(:, i)');
-            end
+            D = diag(small_scale_fading(1:s));
+            self.H = spatial_matrix_rx * D * spatial_matrix_tx';
 
-            self.H_params = struct('K', K);
-            self.H_params.('cluster_power_fraction') = cluster_power_fraction;
-            self.H_params.('cluster_dealy') = cluster_dealy;
-            self.H_params.('subpath_delay') = subpath_delay;
-            self.H_params.('spatial_matrix_tx') = spatial_matrix_tx;
-            self.H_params.('spatial_matrix_rx') = spatial_matrix_rx;
-            self.H_params.('power_fraction') = power_fraction;
-            self.H_params.('subpath_angle_tx') = subpath_angle_tx;
-            self.H_params.('subpath_angle_rx') = subpath_angle_rx;
-            self.H_params.('horiz_angle_tx') = horiz_angle_tx;
-            self.H_params.('horiz_angle_rx') = horiz_angle_rx;
-            self.H_params.('L') = L;
+            H_params_ = struct('K', K);
+            H_params_.('cluster_power_fraction') = cluster_power_fraction;
+            H_params_.('cluster_dealy') = cluster_dealy;
+            H_params_.('subpath_delay') = subpath_delay;
+            H_params_.('spatial_matrix_tx') = spatial_matrix_tx;
+            H_params_.('spatial_matrix_rx') = spatial_matrix_rx;
+            H_params_.('power_fraction') = power_fraction;
+            H_params_.('subpath_angle_tx') = subpath_angle_tx;
+            H_params_.('subpath_angle_rx') = subpath_angle_rx;
+            H_params_.('horiz_angle_tx') = horiz_angle_tx;
+            H_params_.('horiz_angle_rx') = horiz_angle_rx;
+            H_params_.('L') = L;
+            self.H_params = H_params_; %for speed
             
         end
         
@@ -170,11 +175,14 @@ classdef mmChannelModel < handle
             small_scale_fading = sqrt(power_fraction) ./ delay_scf;
 
             %% Computation of H matrix
-            self.H = zeros (max(size(ant_pos_rx)), max(size(ant_pos_tx)));
+%             self.H = zeros (max(size(ant_pos_rx)), max(size(ant_pos_tx)));
+% 
+%             for i = 1:s
+%                     self.H = self.H + ( small_scale_fading(i) * spatial_matrix_rx(:, i) * spatial_matrix_tx(:, i)' );
+%             end
 
-            for i = 1:s
-                    self.H = self.H + ( small_scale_fading(i) * spatial_matrix_rx(:, i) * spatial_matrix_tx(:, i)' );
-            end
+            D = diag(small_scale_fading(1:s));
+            self.H = spatial_matrix_rx * D * spatial_matrix_tx';
         end
     end
 end
