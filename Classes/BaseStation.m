@@ -18,14 +18,12 @@ classdef BaseStation < handle
         BW %bandwidth
         AoA
         AoD
-        AoA_compatibility %for compatibility with old code
-        AoD_compatibility %for compatibility with old code
         ant_pos %all antenna positions in wawelength units
         %memory %for future use
     end
     
     properties
-        lambda %length of the carrier wawe
+        lambda %length of the carrier wave
         ant_arr
         pos      
         BF %beam forming object
@@ -59,8 +57,7 @@ classdef BaseStation < handle
         function init(BS)
             %initialization
             BS_distance = norm(BS.sharedData.UE.pos - BS.pos) / 1000;
-            %BS.PL = 10.^((32.4 + 20*log10(BS_distance) + 20*log10(BS.f/1e9))/10);
-            BS.PL = 10^(22.7 + 36.7 * log10(BS_distance * 1000) + 26 * log10(BS.f / 1e9) / 10);
+            BS.PL = 10.^((32.4 + 21.6*log10(BS_distance) + 20*log10(BS.f/1e9))/10);
             BS.find_AoD();            
             BS.C.update_channel_state(BS.sharedData.UE.AoA, BS.AoD, BS.sharedData.UE.ant_pos, BS.ant_pos, true);
             
@@ -86,8 +83,7 @@ classdef BaseStation < handle
             if mod(sim_time, BS.tt) < 1e-10
                 %update Beam Forming vector, keep channel params, update only ssf values
                 BS_distance = norm(BS.sharedData.UE.pos - BS.pos) / 1000; %Km
-                %BS.PL = 10.^((32.4 + 20*log10(BS_distance) + 20*log10(BS.f/1e9))/10);
-                BS.PL = 10^(22.7 + 36.7 * log10(BS_distance * 1000) + 26 * log10(BS.f / 1e9) / 10);
+                BS.PL = 10.^((32.4 + 21.6*log10(BS_distance) + 20*log10(BS.f/1e9))/10);               
                 BS.find_AoD();
                 BS.C.update_channel_state(BS.sharedData.UE.AoA, BS.AoD, BS.sharedData.UE.ant_pos, BS.ant_pos, false);
 
@@ -141,8 +137,7 @@ classdef BaseStation < handle
             if BS.PL < BS.sharedData.servingBS.PL
                 BS.sharedData.servingBS.handover(BS)
                 BS.sharedData.servingBS = BS;
-            end
-            
+            end            
         end
         
         function handover(BS, to_next_BS)
