@@ -49,9 +49,9 @@ classdef UserEquipment < handle
             UE.BF.update_state(UE.AoA);
         end
         
-        function update(UE, sim_time)
+        function update(UE, sim_time, dt)
             
-            UE.pos(1) = sim_time * UE.vel; %+ UE.pos(1);
+            UE.pos(1) = dt * UE.vel + UE.pos(1); %+ UE.pos(1);
             
             if mod(sim_time, UE.tt) < 1e-10
                 %update Beam Forming vector

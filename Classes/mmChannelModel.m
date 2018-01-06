@@ -10,16 +10,14 @@ classdef mmChannelModel < handle
         f
         xi
         r_tau
-        
-        cdf_of_cluster_num
+                
         lambda
     end
     
     methods
         function self =  mmChannelModel(BW, f, xi, r_tau)
             self.BW = BW;
-            self.f = f;
-            self.cdf_of_cluster_num = [0.48, 0.761, 0.927];
+            self.f = f;           
             self.lambda = physconst('lightspeed') / f;
             self.xi = xi; %4;
             self.r_tau = r_tau; %2.8;
@@ -51,12 +49,13 @@ classdef mmChannelModel < handle
             
             %% Computation of clusters
             p_ref = rand(1,1);
+            cdf_of_cluster_num = [0.48, 0.761, 0.927];
             K = 0;                                                                     % number of clusters
-            if (p_ref < self.cdf_of_cluster_num(1))
+            if (p_ref < cdf_of_cluster_num(1))
                 K = 1;
-            elseif (p_ref < self.cdf_of_cluster_num(2))
+            elseif (p_ref < cdf_of_cluster_num(2))
                 K = 2;
-            elseif (p_ref < self.cdf_of_cluster_num(3))
+            elseif (p_ref < cdf_of_cluster_num(3))
                 K = 3;
             else
                 K = 4;
@@ -181,7 +180,7 @@ classdef mmChannelModel < handle
 %                     self.H = self.H + ( small_scale_fading(i) * spatial_matrix_rx(:, i) * spatial_matrix_tx(:, i)' );
 %             end
 
-            D = diag(small_scale_fading(1:s));
+            D = diag(small_scale_fading(1:s));            
             self.H = spatial_matrix_rx * D * spatial_matrix_tx';
         end
     end

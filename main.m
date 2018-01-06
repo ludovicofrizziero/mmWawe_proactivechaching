@@ -40,8 +40,8 @@ n_rep_PL = 10;
 theta_out = -5; %SINR outage threshold [dB]
 theta_out_lin = 10.^(theta_out./10); %SINR outage threshold
 T_sim = 20; % simulation duration [s]
-t_offset = 0.1; %  simulation step [s]
-T_tracking = 0.1; % tracking periodicity [s]
+dt = 0.1; %  simulation step [s]
+T_tracking = 0.1; % tracking periodicity for BF vector [s]
 T_mul_users_update = 1; %how often BSs change n of connected users 
 t_H = 0.3; % udpate of channel instances
 n_users = 30; % mean number of users per BS, poisson r.v.
@@ -101,8 +101,7 @@ parfor iter = 1:n_rep_PL*length(n_tx_array)
     UE = UserEquipment(n_rx, f, ue_pos, v, T_tracking);
     shared_data.UE = UE;
     UE.sharedData = shared_data;
-    
-    
+        
     n_BS_top = poissrnd(vector_lambda_bs * (road_length),1,1); % number of BSs
     BS_top = [unifrnd(0, road_length, n_BS_top, 1) , 2 * R * ones(n_BS_top,1), 8 + zeros(n_BS_top, 1)]; %(x,y,z) position of BSs
 
@@ -124,24 +123,26 @@ parfor iter = 1:n_rep_PL*length(n_tx_array)
             allBS{i}.init();
     end
     index_internal = 1;
-    rate = zeros(1, length(0.1:t_offset:T_sim));
-    for t = t_offset:t_offset:T_sim %start simulation
-        UE.update(t);
+    rate = zeros(1, length(dt:dt:T_sim));
+    for t =dt:dt:T_sim %start simulation
+        UE.update(t, dt);
         
         for i = 1:length(allBS)
-            allBS{i}.update(t);
+            allBS{i}.update(t, dt);
         end
     
     
-        SINR_interference = -(shared_data.servingBS.GAIN / shared_data.servingBS.PL) * 0.5; % we wont such gain here, but in the for loop we sum it for "error"
-        for i = 1:length(allBS)
-            SINR_interference = SINR_interference + (allBS{i}.GAIN / allBS{i}.PL) * 0.5;    
-        end       
-        
         SINR_num = shared_data.servingBS.GAIN / shared_data.servingBS.PL; % numerator of SINR (depends on the beamwidth)
+        
+        SINR_interference = -SINR_num; % we don't want such gain here, but in the for loop we sum it for "error"
+        for i = 1:length(allBS)
+            SINR_interference = SINR_interference + (allBS{i}.GAIN / allBS{i}.PL);    
+        end       
+        SINR_interference = SINR_interference * 0.5; % ??? why is it divided by 2 ???
+                
         SINR_den = SINR_interference + thermal_noise;
 
-        avg_SINR = SINR_num ./ SINR_den; 
+        SINR = SINR_num / SINR_den; 
         
 %         %% for debug
 %         D(index_internal) = norm(UE.pos - shared_data.servingBS.pos) / 1000;
@@ -151,7 +152,7 @@ parfor iter = 1:n_rep_PL*length(n_tx_array)
 %         %%
         
         %consider rate for the n-users loaded BS
-        rate(index_internal) = shared_data.servingBS.BW * log2(1+avg_SINR) / shared_data.servingBS.n;   %OUTPUT of this Monte Carlo iteration
+        rate(index_internal) = shared_data.servingBS.BW * log2(1+SINR) / shared_data.servingBS.n;   %OUTPUT of this Monte Carlo iteration
         index_internal = index_internal + 1; 
     end
     
