@@ -38,6 +38,10 @@ classdef mmChannelModel < handle
                 out = a * b.H; %b is a mmChannelModel object, a another matrix
             end
         end
+        
+        function varargout = size(this, varargin) %overload size operator
+            [varargout{1:nargout}] = builtin('size', this.H, varargin{:});
+        end
     end
     
     methods (Access = private)

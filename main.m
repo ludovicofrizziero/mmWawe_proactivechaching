@@ -36,9 +36,9 @@ n_rx_array = [4  4 16]; %WARNING: all values must be perfect squares
 
 
 %% parameters for simulation
-n_rep_PL = 10;
+n_rep_PL = 3;
 theta_out = -5; %SINR outage threshold [dB]
-theta_out_lin = 10.^(theta_out./10); %SINR outage threshold
+theta_out_lin = 10^(theta_out/10); %SINR outage threshold
 T_sim = 20; % simulation duration [s]
 dt = 0.1; %  simulation step [s]
 T_tracking = 0.1; % tracking periodicity for BF vector [s]
@@ -124,7 +124,7 @@ parfor iter = 1:n_rep_PL*length(n_tx_array)
     end
     index_internal = 1;
     rate = zeros(1, length(dt:dt:T_sim));
-    for t =dt:dt:T_sim %start simulation
+    for t = dt:dt:T_sim %start simulation
         UE.update(t, dt);
         
         for i = 1:length(allBS)
@@ -132,23 +132,26 @@ parfor iter = 1:n_rep_PL*length(n_tx_array)
         end
     
     
-        SINR_num = shared_data.servingBS.GAIN / shared_data.servingBS.PL; % numerator of SINR (depends on the beamwidth)
+        SINR_num = shared_data.servingBS.signal_power_at_ue; % numerator of SINR (depends on the beamwidth)
         
-        SINR_interference = -SINR_num; % we don't want such gain here, but in the for loop we sum it for "error"
+        SINR_interference = -SINR_num; % we don't want such signal_power_at_ue here, but in the for loop we sum it for "error"
         for i = 1:length(allBS)
-            SINR_interference = SINR_interference + (allBS{i}.GAIN / allBS{i}.PL);    
+            SINR_interference = SINR_interference + (allBS{i}.signal_power_at_ue);    
         end       
         SINR_interference = SINR_interference * 0.5; % ??? why is it divided by 2 ???
                 
         SINR_den = SINR_interference + thermal_noise;
 
         SINR = SINR_num / SINR_den; 
+        if SINR < theta_out_lin
+            SINR = 0; %outage -> no connection between BS and UE
+        end
         
 %         %% for debug
 %         D(index_internal) = norm(UE.pos - shared_data.servingBS.pos) / 1000;
 %         PL(index_internal) = shared_data.servingBS.PL;
-%         G(index_internal) = shared_data.servingBS.GAIN / shared_data.servingBS.PL;
-%         ASINR(index_internal) = avg_SINR;
+%         G(index_internal) = shared_data.servingBS.signal_power_at_ue / shared_data.servingBS.PL;
+%         ASINR(index_internal) = SINR;
 %         %%
         
         %consider rate for the n-users loaded BS
@@ -162,7 +165,7 @@ parfor iter = 1:n_rep_PL*length(n_tx_array)
 %     title('Path Loss');
 %     figure;
 %     plot(G);
-%     title('Gain');
+%     title('signal_power_at_ue');
 %     figure;
 %     plot(D);
 %     title('Distance');   

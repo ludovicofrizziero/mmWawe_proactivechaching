@@ -35,8 +35,9 @@ classdef MVDR_Beamforming < handle
             end
             
             tmp = R \ v;
-            w_tmp = tmp / (v' * tmp); %MVDR method [R^-1 * v * (v^H * R^-1 * v)^-1]   
-            self.w = w_tmp / norm(w_tmp);
+            self.w = tmp / (v' * tmp); %MVDR method [R^-1 * v * (v^H * R^-1 * v)^-1]
+    
+            self.w = self.w 
             
             %w' * v  %array response. Should be 1+0i, check for debug if needed
 
@@ -57,10 +58,6 @@ classdef MVDR_Beamforming < handle
         
         function out = ctranspose(a) %overload complex conjugate transpose
             out = a.w';
-        end
-        
-        function varargout = size(this, varargin) %overload size operator
-            [varargout{1:nargout}] = builtin('size', this.w, varargin{:});
         end
     end
        
