@@ -43,7 +43,7 @@ classdef BaseStation < handle
         function init(BS)
             %initialization
             BS_distance = norm(BS.sharedData.UE.pos - BS.pos);
-            BS.PL = 10.^((32.4 + 21.6*log10(BS_distance/1000) + 20*log10(BS.f/1e6))/10)';            
+            BS.PL = 10.^((32.4 + 20*log10(BS_distance/1000) + 20*log10(BS.f/1e6))/10);            
             BS.find_AoA_AoD();
             [BS.H, BS.H_params] = compute_H_mobility(BS.f, BS.AoA, BS.AoD, BS.sharedData.UE.ant_arr, BS.ant_arr, BS.BW);
             
@@ -69,7 +69,7 @@ classdef BaseStation < handle
             if mod(sim_time, BS.tt) < 1e-10
                 %update Beam Forming vector, keep channel params, update only ssf values
                 BS_distance = norm(BS.sharedData.UE.pos - BS.pos);
-                BS.PL = 10.^((32.4 + 21.6*log10(BS_distance/1000) + 20*log10(BS.f/1e6))/10)';                
+                BS.PL = 10.^((32.4 + 20*log10(BS_distance/1000) + 20*log10(BS.f/1e6))/10);                
                 BS.find_AoA_AoD();
                 BS.H = compute_H_ssf(BS.f, BS.AoA, BS.AoD, BS.sharedData.UE.ant_arr, BS.ant_arr, BS.H_params, BS.BW);
                 

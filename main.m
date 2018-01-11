@@ -36,9 +36,9 @@ n_rx_array = [4  4 16]; %WARNING: all values must be perfect squares
 
 
 %% parameters for simulation
-n_rep_PL = 10;
+n_rep_PL = 3;
 theta_out = -5; %SINR outage threshold [dB]
-theta_out_lin = 10.^(theta_out./10); %SINR outage threshold
+outage_thresh = 10^(theta_out/10); %SINR outage threshold
 T_sim = 20; % simulation duration [s]
 t_offset = 0.1; %  simulation step [s]
 T_tracking = 0.1; % tracking periodicity [s]
@@ -152,6 +152,9 @@ parfor iter = 1:n_rep_PL*length(n_tx_array)
         SINR_den = SINR_interference + thermal_noise;
 
         avg_SINR = SINR_num ./ SINR_den; 
+        if avg_SINR < outage_thresh
+           avg_SINR = 0; %outage -> no connection
+        end
         
         %consider rate for the n-users loaded BS
         rate(index_internal) = shared_data.servingBS.BW * log2(1+avg_SINR) / shared_data.servingBS.n;   %OUTPUT of this Monte Carlo iteration
