@@ -38,7 +38,7 @@ n_rx_array = [4  4 16]; %WARNING: all values must be perfect squares
 %% parameters for simulation
 n_rep_PL = 3;
 theta_out = -5; %SINR outage threshold [dB]
-theta_out_lin = 10^(theta_out/10); %SINR outage threshold
+outage_thresh = 10^(theta_out/10); %SINR outage threshold
 T_sim = 20; % simulation duration [s]
 dt = 0.1; %  simulation step [s]
 T_tracking = 0.1; % tracking periodicity for BF vector [s]
@@ -143,7 +143,7 @@ parfor iter = 1:n_rep_PL*length(n_tx_array)
         SINR_den = SINR_interference + thermal_noise;
 
         SINR = SINR_num / SINR_den; 
-        if SINR < theta_out_lin
+        if SINR < outage_thresh
             SINR = 0; %outage -> no connection between BS and UE
         end
         

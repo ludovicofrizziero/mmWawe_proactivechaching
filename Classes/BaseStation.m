@@ -63,12 +63,11 @@ classdef BaseStation < handle
             
             BS.handin();
             if isequal(BS, BS.sharedData.servingBS)                
-                BS.BF.update_state(BS.AoD);               
-                BS.signal_power_at_ue = abs((BS.sharedData.UE.BF)' * ((BS.sharedData.servingBS.C) * (BS.BF) + 0.01*randn(BS.sharedData.UE.ant_arr, 1)) )^2 / BS.PL; %this station is transmitting
+                BS.BF.update_state(BS.AoD);     %this station is serving                      
             else        
-                BS.BF.update_state([2*pi*rand(1), 2*pi*rand(1)]);
-                BS.signal_power_at_ue = abs((BS.sharedData.UE.BF)' * ((BS.C) * (BS.BF) + 0.01*randn(BS.sharedData.UE.ant_arr, 1)))^2 / BS.PL; %this station is interfering
+                BS.BF.update_state([2*pi*rand(1), 2*pi*rand(1)]); %this station is interfering
             end
+            BS.compute_signal_power();
                        
             BS.n = poissrnd(BS.mean_n);     
         end
@@ -99,7 +98,7 @@ classdef BaseStation < handle
                 BS.C.update_channel_state(BS.sharedData.UE.AoA, BS.AoD, BS.sharedData.UE.ant_pos, BS.ant_pos, false);
             end
                                       
-            BS.signal_power_at_ue = abs((BS.sharedData.UE.BF)' * ((BS.C) * (BS.BF) + 0.01*randn(BS.sharedData.UE.ant_arr, 1)) )^2 / BS.PL; %this station is interfering if it is not equal to sharedData.servingBS            
+            BS.compute_signal_power(); %this station is interfering if it is not equal to sharedData.servingBS            
             
             if mod(sim_time, 1) < 1e10
                 %update every 1 sec the random n of users connected to this station
@@ -131,7 +130,7 @@ classdef BaseStation < handle
             elseif theta > pi/2 && s < 0
                 BS.AoD = [-theta, phi];
             end                      
-        end
+        end               
         
         function handin(BS)
             if BS.PL < BS.sharedData.servingBS.PL
@@ -142,7 +141,19 @@ classdef BaseStation < handle
         
         function handover(BS, to_next_BS)
             BS.BF.update_state([2*pi*rand(1), 2*pi*rand(1)]);
-            BS.signal_power_at_ue = abs((BS.sharedData.UE.BF)' * ((BS.C) * (BS.BF) + 0.01*randn(BS.sharedData.UE.ant_arr, 1)) )^2 / BS.PL; %this station is interfering, needed here to avoid errors
+            BS.compute_signal_power(); %this station is interfering, needed here to avoid errors
+        end
+        
+                
+        function compute_signal_power(BS)
+            BS.signal_power_at_ue = abs((BS.sharedData.UE.BF)' * ((BS.C) * (BS.BF) + BaseStation.cnoise(BS.sharedData.UE.ant_arr, 0.01)) )^2 / BS.PL;
+        end
+    end
+    
+    methods (Static)
+        function n = cnoise(N, var)
+            %complex circular symmetric noise
+            n = sqrt(var/2) * (randn(N,1) + 1i*randn(N,1));            
         end
     end
     
