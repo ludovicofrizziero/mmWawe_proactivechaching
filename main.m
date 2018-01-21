@@ -31,91 +31,70 @@ BW = 1e9; % Bandwidth [Hz]
 thermal_noise = 10^((-174+7)/10)*BW ; % thermal noise in linear scale (OBS: -30 to convert in dB)
 sigma = thermal_noise/P_tx_lin; % thermal noise, normalized at the tranmitting power
 
-n_tx_array = [4 16 64]; %WARNING: all values must be perfect squares
-n_rx_array = [4  4 16]; %WARNING: all values must be perfect squares
+%% number of antennas for BS and UE
+n_tx = 64; %WARNING: all values must be perfect squares
+n_rx = 16; %WARNING: all values must be perfect squares
 
+%% paramers for road
+v = 100/3.6; % speed [m/s]
+road_length = 1000;
+d_R = 2.5; 
+W_L = 3.7; % lane width
+N_0 = 3; % # of obstacle lanes per direction
+R = d_R + N_0*W_L; % road width
+BS_per_km = 15;
 
 %% parameters for simulation
-n_rep_PL = 3;
+n_rep_PL = 1;
 theta_out = -5; %SINR outage threshold [dB]
 outage_thresh = 10^(theta_out/10); %SINR outage threshold
-T_sim = 20; % simulation duration [s]
+T_sim = 1000/v; % simulation duration [s]
 dt = 0.1; %  simulation step [s]
 T_tracking = 0.1; % tracking periodicity for BF vector [s]
 T_mul_users_update = 1; %how often BSs change n of connected users 
 t_H = 0.3; % udpate of channel instances
 n_users = 30; % mean number of users per BS, poisson r.v.
 
-%% paramers for road
-v = 100/3.6; % speed [m/s]
-road_length = 1000;
-usefull_road_length = v * T_sim; % positive length of the road [m] %modified by Frizziero
-road_start = -1000; % negative length of the road [m]
-d_R = 2.5; 
-W_L = 3.5; % truck length
-N_0 = 3; % # of obstacle lanes per direction
-R = d_R + N_0*W_L; % road width
-BS_per_km = 15;
-
-%% %%%%%%%%%%%%%%%%%%%%%%% set up parallelization %%%%%%%%%%%%%%%%%%%%%%%%%%
-permutation = randperm(n_rep_PL*length(n_tx_array)); %to equally spread workload on workers
-vector_lambda_bs = BS_per_km/1000;
-tmp = 1:n_rep_PL;
-iter_vec = [];
-for i = 1:length(n_tx_array)
-    iter_vec = [iter_vec, tmp];
-end
-antenna_idx_vec = [];
-tmp = ones(1, n_rep_PL);
-for i = 1:length(n_tx_array)
-    antenna_idx_vec = [antenna_idx_vec, tmp];
-    tmp = tmp + 1;
-end
-
-iteration_map = (1:n_rep_PL)';
-for i = 1:length(n_tx_array)-1
-    iteration_map = [iteration_map; (1:n_rep_PL)'];
-    tmp = tmp + 1;
-end
-
-antenna_map = ones(n_rep_PL, 1);
-for i = 1:length(n_tx_array)-1
-    antenna_map = [antenna_map; ones(n_rep_PL, 1) + i];
-end
-iteration_map = iteration_map(permutation);
-antenna_map = antenna_map(permutation);
-rate_tmp = cell(length(n_tx_array) * n_rep_PL, 1);
-%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+%% %%%%%%%%%%%%%%%%%%%%%%% Monte Carlo Method %%%%%%%%%%%%%%%%%%%%%%%%%%
+rate_tmp = cell(n_rep_PL, 1);
 tic; 
-parfor iter = 1:n_rep_PL*length(n_tx_array)  
+for iter = 1:n_rep_PL  
 
-    n_iter = iteration_map(iter);    
-    antenna_idx = antenna_map(iter);
-    n_tx = n_tx_array(antenna_idx);
-    n_rx = n_rx_array(antenna_idx);
-    fprintf('iteration: %d [%d/%d -> %d/%d]\n', iter, antenna_idx, length(n_tx_array),n_iter, n_rep_PL);      
+    fprintf('iteration: %d\n', iter);      
     
-    ue_pos = [rand(1,1) * (road_length - usefull_road_length), R - randi(3,1)*W_L + W_L/2, 0]; %(x,y,z) position of UE
+    ue_pos = [0, R - randi(3,1)*W_L + W_L/2, 0]; %(x,y,z) position of UE
     shared_data = BaseStation.sharedData;
     UE = UserEquipment(n_rx, f, ue_pos, v, T_tracking);
     shared_data.UE = UE;
     UE.sharedData = shared_data;
         
-    n_BS_top = poissrnd(vector_lambda_bs * (road_length),1,1); % number of BSs
-    BS_top = [unifrnd(0, road_length, n_BS_top, 1) , 2 * R * ones(n_BS_top,1), 8 + zeros(n_BS_top, 1)]; %(x,y,z) position of BSs
-
-    n_BS_bottom = poissrnd(vector_lambda_bs * (road_length),1,1); % number of BSs
-    BS_bottom = [unifrnd(0, road_length, n_BS_bottom, 1) , zeros(n_BS_bottom,1), 8 + zeros(n_BS_bottom, 1)]; %(x,y,z) position of BSs             
+    n_BS_top = poissrnd(BS_per_km/1000 * (road_length),1,1); % number of BSs
+    n_BS_bottom = poissrnd(BS_per_km/1000 * (road_length),1,1); % number of BSs   
+    BS_distance_avg_top = 1000/n_BS_top;
+    BS_distance_avg_bottom = 1000/n_BS_bottom;
+    delta_top = ceil(BS_distance_avg_top/8);
+    delta_bottom = ceil(BS_distance_avg_bottom/8);    
     
     allBS = cell(n_BS_top + n_BS_bottom, 1);
     for i = 1:n_BS_top
-        allBS{i} = BaseStation(n_tx, f, BW, BS_top(i, :), t_H, T_tracking, n_users); 
+        pos = [(i-1)*BS_distance_avg_top+unifrnd(-delta_top , delta_top) , 2 * R, 8];
+        allBS{i} = BaseStation(i, n_tx, f, BW, pos, t_H, T_tracking, n_users); 
     end
     
     for i = 1:n_BS_bottom
-        allBS{i + n_BS_top} = BaseStation(n_tx, f, BW, BS_bottom(i, :), t_H, T_tracking, n_users); 
+        pos = [(i-1)*BS_distance_avg_bottom+unifrnd(-delta_bottom , delta_bottom) , 0, 8];
+        allBS{i + n_BS_top} = BaseStation(i + n_BS_top, n_tx, f, BW, pos, t_H, T_tracking, n_users); 
     end
+    
+%     %% for debug, plot BS disposition
+%     figure;
+%     hold on;
+%     for i = 1:n_BS_top+n_BS_bottom
+%         plot(allBS{i}.pos(1)+1, allBS{i}.pos(2), '*')
+%         text(allBS{i}.pos(1)+1, allBS{i}.pos(2), int2str(allBS{i}.ID));
+%     end
+%     hold off;
+%     %%
     
     shared_data.servingBS = allBS{1}; %just for initialization
     UE.init();
@@ -130,8 +109,20 @@ parfor iter = 1:n_rep_PL*length(n_tx_array)
         for i = 1:length(allBS)
             allBS{i}.update(t, dt);
         end
-    
-    
+        
+%         %% for debug
+%          fprintf('-\n');
+%         fprintf('serving BS: %d\n', shared_data.servingBS.ID);
+%         fprintf('UE xpos: %3.3f\n', UE.pos(1));
+%         id = 1;
+%         for i = 1:length(allBS)
+%             if allBS{i}.signal_power_at_ue > allBS{id}.signal_power_at_ue
+%                 id = i;
+%             end
+%         end
+%         fprintf('max power BS id: %d\n', id);
+%         %%
+     
         SINR_num = shared_data.servingBS.signal_power_at_ue; % numerator of SINR (depends on the beamwidth)
         
         SINR_interference = -SINR_num; % we don't want such signal_power_at_ue here, but in the for loop we sum it for "error"
@@ -147,7 +138,7 @@ parfor iter = 1:n_rep_PL*length(n_tx_array)
             SINR = 0; %outage -> no connection between BS and UE
         end
         
-%         %% for debug
+%         %% for debug          
 %         D(index_internal) = norm(UE.pos - shared_data.servingBS.pos) / 1000;
 %         PL(index_internal) = shared_data.servingBS.PL;
 %         G(index_internal) = shared_data.servingBS.signal_power_at_ue / shared_data.servingBS.PL;
@@ -165,7 +156,7 @@ parfor iter = 1:n_rep_PL*length(n_tx_array)
 %     title('Path Loss');
 %     figure;
 %     plot(G);
-%     title('signal_power_at_ue');
+%     title('signal power at ue');
 %     figure;
 %     plot(D);
 %     title('Distance');   
@@ -176,8 +167,7 @@ parfor iter = 1:n_rep_PL*length(n_tx_array)
 %     plot(rate);
 %     title('Rate');
 %     %%
-    
-    
+        
     rate_tmp{iter} = [min(rate), mean(rate), max(rate), std(rate)]; % entire OUTPUT of the Monte Carlo method
 end
 
@@ -185,47 +175,35 @@ stop_timer = toc;
 fprintf('runtime: %4.3f s\n', stop_timer);  
 
 %% %%%%%%%%%%%%%%%%%%%%%%reorder output%%%%%%%%%%%%%%%%%%%%%%
-min_rate_final = zeros(length(n_tx_array),n_rep_PL);
-mean_rate_final = zeros(length(n_tx_array),n_rep_PL); 
-max_rate_final = zeros(length(n_tx_array),n_rep_PL);
-std_rate_final = zeros(length(n_tx_array),n_rep_PL);
+min_rate_final = zeros(1,n_rep_PL);
+mean_rate_final = zeros(1,n_rep_PL); 
+max_rate_final = zeros(1,n_rep_PL);
+std_rate_final = zeros(1,n_rep_PL);
 
-for iter =  1:n_rep_PL*length(n_tx_array)
-    antenna_idx = antenna_map(iter);
-    n_iter = iteration_map(iter);
-    min_rate_final(antenna_idx, n_iter) = rate_tmp{iter}(1);
-    mean_rate_final(antenna_idx, n_iter) = rate_tmp{iter}(2);
-    max_rate_final(antenna_idx, n_iter) = rate_tmp{iter}(3);
-    std_rate_final(antenna_idx, n_iter) = rate_tmp{iter}(4);
+for iter =  1:n_rep_PL 
+    min_rate_final(1, iter) = rate_tmp{iter}(1);
+    mean_rate_final(1, iter) = rate_tmp{iter}(2);
+    max_rate_final(1, iter) = rate_tmp{iter}(3);
+    std_rate_final(1, iter) = rate_tmp{iter}(4);
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-formatSpec = '%d|%d->\tmin\t%2.6f\tmean\t%2.6f\tmax\t%2.6f\tstd\t%2.6f\tGbps\n';  %tab separeted values
+formatSpec = '%4d->\tmin\t%2.6f\tmean\t%2.6f\tmax\t%2.6f\tstd\t%2.6f\tGbps\n';  %tab separeted values
 tmp = 1:n_rep_PL;
-iter_vec = [];
-for i = 1:length(n_tx_array)
-    iter_vec = [iter_vec, tmp];
-end
-antenna_idx_vec = [];
-tmp = ones(1, n_rep_PL);
-for i = 1:length(n_tx_array)
-    antenna_idx_vec = [antenna_idx_vec, tmp];
-    tmp = tmp + 1;
-end
+iter_vec = 1:n_rep_PL;
 
-tofile =    [   antenna_idx_vec; iter_vec;    ...
-                [min_rate_final(1, :), min_rate_final(2, :), min_rate_final(3, :) ]  / 1e9;  ...
-                [mean_rate_final(1, :), mean_rate_final(2, :), mean_rate_final(3, :) ]  / 1e9;  ...
-                [max_rate_final(1, :), max_rate_final(2, :), max_rate_final(3, :) ]  / 1e9;  ...
-                [std_rate_final(1, :), std_rate_final(2, :), std_rate_final(3, :) ]  / 1e9   ...
+tofile =    [   iter_vec;    ...
+                min_rate_final / 1e9;  ...
+                mean_rate_final / 1e9;  ...
+                max_rate_final / 1e9;  ...
+                std_rate_final / 1e9   ...
             ];
 
-fname = sprintf('rate_%dBSperKM.txt', BS_per_km);
+fname = sprintf('rate_%d_%d_%d.txt', BS_per_km, n_tx, n_rx);
 fileID = fopen(fname,'w');
+fprintf(fileID, 'configuration:\t%d BSperKm\t%d n_tx\t%d n_rx\n', [BS_per_km, n_tx, n_rx]);
 fprintf(fileID, formatSpec, tofile);
 fclose(fileID);
 
 %print a fast report of the simulation
-fprintf('antenna configuration 1 mean rate: %2.6f Gbps\n', mean(mean_rate_final(1, :)) / 1e9);
-fprintf('antenna configuration 2 mean rate: %2.6f Gbps\n', mean(mean_rate_final(2, :)) / 1e9);
-fprintf('antenna configuration 3 mean rate: %2.6f Gbps\n', mean(mean_rate_final(3, :)) / 1e9);
+fprintf('mean rate: %2.6f Gbps\n', mean(mean_rate_final(1, :)) / 1e9);

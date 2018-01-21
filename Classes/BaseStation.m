@@ -19,10 +19,12 @@ classdef BaseStation < handle
         AoA
         AoD
         ant_pos %all antenna positions in wawelength units
-        %memory %for future use
+        memory
+        TTT %Time To Transition
     end
     
     properties
+        ID
         lambda %length of the carrier wave
         ant_arr
         pos      
@@ -31,11 +33,13 @@ classdef BaseStation < handle
     end
     
     methods
-        function BS = BaseStation(antenna_array, f, BW, position, t_H, t_tracking, mean_nusers) %constructor
+        function BS = BaseStation(ID, antenna_array, f, BW, position, t_H, t_tracking, mean_nusers) %constructor
+            BS.ID = ID;
             BS.ant_arr = antenna_array;
             BS.pos = position;
             BS.th = t_H;
             BS.tt = t_tracking;
+            BS.TTT = 1; %for init
             BS.mean_n = mean_nusers;
             BS.f = f;
             BS.BW = BW;     
@@ -51,7 +55,8 @@ classdef BaseStation < handle
                 end
             end          
             
-            BS.BF = MVDR_Beamforming(0.01, BS.lambda, BS.ant_pos);            
+            BS.BF = MVDR_Beamforming(0.01, BS.lambda, BS.ant_pos);    
+            BS.memory = round(rand(1));
         end
         
         function init(BS)
@@ -61,18 +66,19 @@ classdef BaseStation < handle
             BS.find_AoD();            
             BS.C.update_channel_state(BS.sharedData.UE.AoA, BS.AoD, BS.sharedData.UE.ant_pos, BS.ant_pos, true);
             
-            BS.handin();
+            BS.signal_power_at_ue = 1/BS.PL; %just for init
+%             BS.handin();
             if isequal(BS, BS.sharedData.servingBS)                
                 BS.BF.update_state(BS.AoD);     %this station is serving                      
             else        
-                BS.BF.update_state([2*pi*rand(1), 2*pi*rand(1)]); %this station is interfering
+                BS.BF.update_state([2*pi*rand(1), pi*rand(1)]); %this station is interfering
             end
             BS.compute_signal_power();
                        
             BS.n = poissrnd(BS.mean_n);     
         end
         
-        function update(BS, sim_time, dt)                       
+        function update(BS, sim_time, dt)                            
             if mod(sim_time, BS.th) < 1e-10
                 %update all channel info
                 BS.find_AoD();
@@ -86,11 +92,16 @@ classdef BaseStation < handle
                 BS.find_AoD();
                 BS.C.update_channel_state(BS.sharedData.UE.AoA, BS.AoD, BS.sharedData.UE.ant_pos, BS.ant_pos, false);
 
-                BS.handin();
-                if isequal(BS, BS.sharedData.servingBS)                    
-                    BS.BF.update_state(BS.AoD);
+                BS.handin(dt);
+                if isequal(BS, BS.sharedData.servingBS) 
+                    a = pi/6; %30 deg                   
+                    if (BS.AoD(1) >= a && BS.AoD(1) <= pi-a) || (BS.AoD(1) >= -(pi-a)  && BS.AoD(1) <= -a)
+                        BS.BF.update_state(BS.AoD); %UE is in useful sweep range (+- 60 deg)
+                    else
+                        BS.BF.update_state([pi/2, BS.AoD(2)]); %UE is outside useful sweep range (+- 60 deg)
+                    end
                 else                    
-                    BS.BF.update_state([2*pi*rand(1), 2*pi*rand(1)]);
+                    BS.BF.update_state([2*pi*rand(1), pi*rand(1)]);
                 end
             else
                 %don't update Beam Forming vector, keep channel params, update only ssf values
@@ -103,6 +114,12 @@ classdef BaseStation < handle
             if mod(sim_time, 1) < 1e10
                 %update every 1 sec the random n of users connected to this station
                 BS.n = poissrnd(BS.mean_n); 
+            end
+        end
+        
+        function download_file(BS, dt, rate)
+            if isequal(BS, BS.sharedData.servingBS)
+                %% download a portion (rate * dt) of the stored file
             end
         end
     end
@@ -132,21 +149,33 @@ classdef BaseStation < handle
             end                      
         end               
         
-        function handin(BS)
-            if BS.PL < BS.sharedData.servingBS.PL
-                BS.sharedData.servingBS.handover(BS)
+        function handin(BS, dt)
+%             if BS.PL < BS.sharedData.servingBS.PL
+%                 BS.sharedData.servingBS.handover(BS)
+%                 BS.sharedData.servingBS = BS;
+%             end   
+            
+            P = BS.signal_power_at_ue; %similar idea as presented in DOC/iswcs-symbiocity.pdf but the bias is very different in nature
+            if  P > BS.sharedData.servingBS.signal_power_at_ue && BS.TTT >= 0.2 % BS.PL < BS.sharedData.servingBS.PL && BS.TTT >= 0.5 % 
+                BS.sharedData.servingBS.handover(BS) %ask the old BS to hand over the UE
                 BS.sharedData.servingBS = BS;
+                BS.TTT = 0;
+            elseif P > BS.sharedData.servingBS.signal_power_at_ue && BS.TTT < 0.2 % BS.PL < BS.sharedData.servingBS.PL && BS.TTT < 0.5 % 
+                BS.TTT = BS.TTT + dt;
+            else
+                BS.TTT = 0;
             end            
         end
         
         function handover(BS, to_next_BS)
-            BS.BF.update_state([2*pi*rand(1), 2*pi*rand(1)]);
+            fprintf('handover from %d to %d;\n', BS.ID, to_next_BS.ID);
+            BS.BF.update_state([2*pi*rand(1), pi*rand(1)]);
             BS.compute_signal_power(); %this station is interfering, needed here to avoid errors
-        end
-        
+        end      
                 
         function compute_signal_power(BS)
-            BS.signal_power_at_ue = abs((BS.sharedData.UE.BF)' * ((BS.C) * (BS.BF) + BaseStation.cnoise(BS.sharedData.UE.ant_arr, 0.01)) )^2 / BS.PL;
+            P_tx = 0.5; %Transmitting power [Watt]
+            BS.signal_power_at_ue = P_tx * abs((BS.sharedData.UE.BF)' * ((BS.C) * (BS.BF) + BaseStation.cnoise(BS.sharedData.UE.ant_arr, 0.01)) )^2 / BS.PL;
         end
     end
     

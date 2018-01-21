@@ -30,7 +30,7 @@ classdef UserEquipment < handle
             UE.vel = vel;
             UE.tt = t_tracking;   
             UE.lambda = physconst('lightspeed') / f;            
-            d = 0.5; %assume 0.5 wawelength distance
+            d = 0.01; %m
             UE.ant_pos = zeros(UE.ant_arr, 3);           
             ind = 1;
             for i = 1 : sqrt(UE.ant_arr)
