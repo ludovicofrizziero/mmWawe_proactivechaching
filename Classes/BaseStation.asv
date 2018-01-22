@@ -177,9 +177,14 @@ classdef BaseStation < handle
         end               
         
         function handin(BS, dt)
+%             if BS.PL < BS.sharedData.servingBS.PL
+%                 BS.sharedData.servingBS.handover(BS)
+%                 BS.sharedData.servingBS = BS;
+%             end  
+
             length = abs(BS.pos(2) - BS.sharedData.UE.pos(2)) * sin(pi/3) / sin(pi/6); %optimal  BS' cell **HALF** chord length relative to UE
-            bias = (BS.memory > 0) * min(max(0, BS.sharedData.Ue.pos(1) - (BS.pos(1) - length ) / (length*2) ), 1);
-            P = BS.signal_power_at_ue * (1 + bias); %similar idea as presented in DOC/iswcs-symbiocity.pdf 
+            bias = BS.sharedData.Ue.pos(1)(BS.pos(1) - length ) ;
+            P = BS.signal_power_at_ue * (1 + bias * (BS.memory > 0)); %similar idea as presented in DOC/iswcs-symbiocity.pdf 
             if  P > BS.sharedData.servingBS.signal_power_at_ue && BS.TTT >= 0.2 % BS.PL < BS.sharedData.servingBS.PL && BS.TTT >= 0.5 % 
                 BS.sharedData.servingBS.handover(BS) %ask the old BS to hand over the UE
                 BS.sharedData.servingBS = BS;

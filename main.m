@@ -53,7 +53,7 @@ dt = 0.1; %  simulation step [s]
 T_tracking = 0.1; % tracking periodicity for BF vector [s]
 T_mul_users_update = 1; %how often BSs change n of connected users 
 t_H = 0.3; % udpate of channel instances
-n_users = 30; % mean number of users per BS, poisson r.v.
+n_users = 25; % mean number of users per BS, poisson r.v.
 
 %% %%%%%%%%%%%%%%%%%%%%%%% Monte Carlo Method %%%%%%%%%%%%%%%%%%%%%%%%%%
 rate_tmp = cell(n_rep_PL, 1);
@@ -90,8 +90,8 @@ for iter = 1:n_rep_PL
 %     figure;
 %     hold on;
 %     for i = 1:n_BS_top+n_BS_bottom
-%         plot(allBS{i}.pos(1)+1, allBS{i}.pos(2), '*')
-%         text(allBS{i}.pos(1)+1, allBS{i}.pos(2), int2str(allBS{i}.ID));
+%         plot(allBS{i}.pos(1), allBS{i}.pos(2), '*')
+%         text(allBS{i}.pos(1), allBS{i}.pos(2)+1, int2str(allBS{i}.ID));
 %     end
 %     hold off;
 %     %%
@@ -101,9 +101,16 @@ for iter = 1:n_rep_PL
     for i = 1:length(allBS)
             allBS{i}.init();
     end
+    
+    %% allocate file to BS
+    solve_allocation_problem(allBS, UE);
+    %%
+    
+    %% start simulation
     index_internal = 1;
-    rate = zeros(1, length(dt:dt:T_sim));
-    for t = dt:dt:T_sim %start simulation
+    sim_steps = dt:dt:T_sim;
+    rate = zeros(1, length(sim_steps));
+    for t = sim_steps 
         UE.update(t, dt);
         
         for i = 1:length(allBS)
@@ -145,8 +152,15 @@ for iter = 1:n_rep_PL
 %         ASINR(index_internal) = SINR;
 %         %%
         
+        %% file transmission
         %consider rate for the n-users loaded BS
-        rate(index_internal) = shared_data.servingBS.BW * log2(1+SINR) / shared_data.servingBS.n;   %OUTPUT of this Monte Carlo iteration
+        r = shared_data.servingBS.BW * log2(1+SINR) / shared_data.servingBS.n;   %OUTPUT of this Monte Carlo iteration        
+        
+        f_chunk = shared_data.servingBS.download_file(dt, r);
+        UE.receive_file_chunk(f_chunk);
+        %%
+        
+        rate(index_internal) = r;
         index_internal = index_internal + 1; 
     end
     

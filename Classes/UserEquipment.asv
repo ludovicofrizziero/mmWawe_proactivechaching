@@ -75,7 +75,7 @@ classdef UserEquipment < handle
                 UE.buffer = UE.buffer - UE.requested_rate * dt;
                 if UE.buffer < 0
                     %TODO signal bad QoS
-                    UE.lost_data = UE.lost_data - UE.buffer;
+                    UE.lost_data = UE.lost_data - UE.buffer; %bufer
                     
                     UE.buffer = 0;
                 end
@@ -85,10 +85,10 @@ classdef UserEquipment < handle
         function receive_file_chunk(UE, file_chunk)
             UE.buffer = UE.buffer + file_chunk;
             if UE.buffer > UE.max_buffer
-                %TODO signal bad QoS
-                UE.lost_data = UE.lost_data + (UE.buffer - UE.max_buffer);
+                UE.buffer = UE.max_buffer;
                 
-                UE.buffer = UE.max_buffer; 
+                %TODO signal bad QoS
+                
             end
         end
     end
