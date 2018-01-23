@@ -42,29 +42,33 @@ d_R = 2.5;
 W_L = 3.7; % lane width
 N_0 = 3; % # of obstacle lanes per direction
 R = d_R + N_0*W_L; % road width
-BS_per_km = 15;
+BS_per_km = 10;
 
 %% parameters for simulation
-n_rep_PL = 1;
+n_rep_PL = 4;
 theta_out = -5; %SINR outage threshold [dB]
 outage_thresh = 10^(theta_out/10); %SINR outage threshold
-T_sim = 1000/v; % simulation duration [s]
+T_sim = floor(1000/v); % simulation duration [s]
 dt = 0.1; %  simulation step [s]
 T_tracking = 0.1; % tracking periodicity for BF vector [s]
 T_mul_users_update = 1; %how often BSs change n of connected users 
 t_H = 0.3; % udpate of channel instances
 n_users = 25; % mean number of users per BS, poisson r.v.
 
+DEBUG = n_rep_PL < 2;
+SAVE_DATA_VERBOSE = true;
+
 %% %%%%%%%%%%%%%%%%%%%%%%% Monte Carlo Method %%%%%%%%%%%%%%%%%%%%%%%%%%
 rate_tmp = cell(n_rep_PL, 1);
 tic; 
-for iter = 1:n_rep_PL  
-
+savings = cell(n_rep_PL, 1);
+parfor iter = 1:n_rep_PL  
+    
     fprintf('iteration: %d\n', iter);      
     
-    ue_pos = [0, R - randi(3,1)*W_L + W_L/2, 0]; %(x,y,z) position of UE
+    start_ue_pos = [0, d_R + randi(3,1)*W_L - W_L/2, 0]; %(x,y,z) position of UE
     shared_data = BaseStation.sharedData;
-    UE = UserEquipment(n_rx, f, ue_pos, v, T_tracking);
+    UE = UserEquipment(n_rx, f, start_ue_pos, v, T_tracking, T_sim/dt);
     shared_data.UE = UE;
     UE.sharedData = shared_data;
         
@@ -84,17 +88,7 @@ for iter = 1:n_rep_PL
     for i = 1:n_BS_bottom
         pos = [(i-1)*BS_distance_avg_bottom+unifrnd(-delta_bottom , delta_bottom) , 0, 8];
         allBS{i + n_BS_top} = BaseStation(i + n_BS_top, n_tx, f, BW, pos, t_H, T_tracking, n_users); 
-    end
-    
-%     %% for debug, plot BS disposition
-%     figure;
-%     hold on;
-%     for i = 1:n_BS_top+n_BS_bottom
-%         plot(allBS{i}.pos(1), allBS{i}.pos(2), '*')
-%         text(allBS{i}.pos(1), allBS{i}.pos(2)+1, int2str(allBS{i}.ID));
-%     end
-%     hold off;
-%     %%
+    end        
     
     shared_data.servingBS = allBS{1}; %just for initialization
     UE.init();
@@ -103,13 +97,37 @@ for iter = 1:n_rep_PL
     end
     
     %% allocate file to BS
-    solve_allocation_problem(allBS, UE);
+    [X, chunks] = solve_allocation_problem(allBS, UE, DEBUG);
+    
+    for i = 1:size(X)
+        allBS{i}.allocate_memory_for_ue(chunks(i) * X(i));
+    end
+    
+    if DEBUG
+        disp(X');
+    end
+    %%
+    
+    %% for debug, plot BS disposition
+    if DEBUG
+        figure;
+        hold on;
+        for i = 1:n_BS_top+n_BS_bottom
+            plot(allBS{i}.pos(1), allBS{i}.pos(2), '*')
+            text(allBS{i}.pos(1), allBS{i}.pos(2)+1, int2str(allBS{i}.ID));
+            if allBS{i}.memory > 0
+                text(allBS{i}.pos(1), allBS{i}.pos(2)+3, num2str(double(allBS{i}.memory), '%1.3e'));
+            end
+        end
+        hold off;
+    end
     %%
     
     %% start simulation
     index_internal = 1;
     sim_steps = dt:dt:T_sim;
-    rate = zeros(1, length(sim_steps));
+    rate = zeros(length(sim_steps), 1);
+    servingBS_IDs = zeros(length(sim_steps), 1);
     for t = sim_steps 
         UE.update(t, dt);
         
@@ -117,18 +135,11 @@ for iter = 1:n_rep_PL
             allBS{i}.update(t, dt);
         end
         
-%         %% for debug
-%          fprintf('-\n');
-%         fprintf('serving BS: %d\n', shared_data.servingBS.ID);
-%         fprintf('UE xpos: %3.3f\n', UE.pos(1));
-%         id = 1;
-%         for i = 1:length(allBS)
-%             if allBS{i}.signal_power_at_ue > allBS{id}.signal_power_at_ue
-%                 id = i;
-%             end
-%         end
-%         fprintf('max power BS id: %d\n', id);
-%         %%
+        %% for debug
+        if DEBUG
+            fprintf('-\n');
+        end
+        %%
      
         SINR_num = shared_data.servingBS.signal_power_at_ue; % numerator of SINR (depends on the beamwidth)
         
@@ -138,19 +149,12 @@ for iter = 1:n_rep_PL
         end       
         SINR_interference = SINR_interference * 0.5; % ??? why is it divided by 2 ???
                 
-        SINR_den = SINR_interference + thermal_noise;
+        SINR_den = SINR_interference + thermal_noise/shared_data.servingBS.n; %we must account for the avaiable bandwith to the UE, not the total BW
 
         SINR = SINR_num / SINR_den; 
         if SINR < outage_thresh
             SINR = 0; %outage -> no connection between BS and UE
-        end
-        
-%         %% for debug          
-%         D(index_internal) = norm(UE.pos - shared_data.servingBS.pos) / 1000;
-%         PL(index_internal) = shared_data.servingBS.PL;
-%         G(index_internal) = shared_data.servingBS.signal_power_at_ue / shared_data.servingBS.PL;
-%         ASINR(index_internal) = SINR;
-%         %%
+        end       
         
         %% file transmission
         %consider rate for the n-users loaded BS
@@ -161,27 +165,43 @@ for iter = 1:n_rep_PL
         %%
         
         rate(index_internal) = r;
+        servingBS_IDs(index_internal) = shared_data.servingBS.ID;
         index_internal = index_internal + 1; 
+    end   
+
+    if DEBUG
+        for i = 1:max(size(allBS))
+            fprintf('BS %d: %1.3e bits remaining\n', allBS{i}.ID, double(allBS{i}.memory));
+        end
+        
+        fprintf('UE buffer load: %1.3e %% \n', double(UE.buffer)/double(UE.max_buffer));
     end
     
-%     %% for debug
-%     figure;
-%     plot(PL);
-%     title('Path Loss');
-%     figure;
-%     plot(G);
-%     title('signal power at ue');
-%     figure;
-%     plot(D);
-%     title('Distance');   
-%     figure;
-%     plot(ASINR);
-%     title('AVG SINR');
-%     figure;
-%     plot(rate);
-%     title('Rate');
-%     %%
+    if SAVE_DATA_VERBOSE
+        [ue_buffer, ue_max_buffer, ue_lost_data, ue_waiting_time] = UE.dump_data();
+        BSs_pos = zeros(max(size(allBS)), 3);
+        BSs_mem_state = zeros(max(size(allBS)), 1);
+        for i = 1:max(size(allBS))
+            fprintf('BS %d: %1.3e bits remaining\n', allBS{i}.ID, double(allBS{i}.memory));
+            BSs_pos(i, :) = allBS{i}.pos;
+            BSs_mem_state(i) = allBS{i}.memory;
+        end        
         
+        s = struct;
+        s.ue_buffer = ue_buffer;
+        s.ue_max_buffer = ue_max_buffer;
+        s.ue_lost_data = ue_lost_data;
+        s.ue_waiting_time = ue_waiting_time;
+        s.rate = rate;
+        s.servingBS_IDs = servingBS_IDs;
+        s.BSs_pos = BSs_pos;
+        s.BSs_mem_state = BSs_mem_state;
+        s.X = X;
+        s.chunks = chunks;
+        
+        savings{iter} = s;
+    end
+    
     rate_tmp{iter} = [min(rate), mean(rate), max(rate), std(rate)]; % entire OUTPUT of the Monte Carlo method
 end
 
@@ -213,11 +233,14 @@ tofile =    [   iter_vec;    ...
                 std_rate_final / 1e9   ...
             ];
 
-fname = sprintf('rate_%d_%d_%d.txt', BS_per_km, n_tx, n_rx);
+fname = sprintf('RESULTS\\rate_%d_%d_%d.txt', BS_per_km, n_tx, n_rx);
 fileID = fopen(fname,'w');
 fprintf(fileID, 'configuration:\t%d BSperKm\t%d n_tx\t%d n_rx\n', [BS_per_km, n_tx, n_rx]);
 fprintf(fileID, formatSpec, tofile);
 fclose(fileID);
+
+name = strcat('RESULTS//savings.mat');
+save(   name, 'savings' );
 
 %print a fast report of the simulation
 fprintf('mean rate: %2.6f Gbps\n', mean(mean_rate_final(1, :)) / 1e9);

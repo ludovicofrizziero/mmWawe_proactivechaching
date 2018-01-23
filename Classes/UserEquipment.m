@@ -11,6 +11,10 @@ classdef UserEquipment < handle
         tt
         lambda
         ant_pos
+        buffer_hist
+        lost_data_hist
+        wait_time_hist
+        hist_index
     end
     
     properties
@@ -25,11 +29,10 @@ classdef UserEquipment < handle
         requested_file_size
         buffer
         max_buffer
-        lost_data
     end
     
     methods   
-        function UE = UserEquipment(antenna_array, f, position, vel, t_tracking) %constructor
+        function UE = UserEquipment(antenna_array, f, position, vel, t_tracking, data_length) %constructor
             UE.ant_arr = antenna_array;
             UE.pos = position;
             UE.vel = vel;
@@ -51,8 +54,12 @@ classdef UserEquipment < handle
             M = 1e9 * 8;   %[bits] mean
             V = 350e6 * 8; %[bits] variance            
             UE.requested_file_size = int64(sum(lognrnd(log(M^2/sqrt(V+M^2)), sqrt(log(V/M^2 + 1))))); 
-            UE.max_buffer = int64(1.5e9 * 8); %[bits]
-            UE.buffer = 0;
+            UE.max_buffer = int64(0.5e9 * 8); %[bits]
+            UE.buffer = int64(1); %else wait_time is wrongly updated at the very first step            
+            
+            UE.buffer_hist = zeros(data_length, 1);
+            UE.lost_data_hist = zeros(data_length, 1);
+            UE.wait_time_hist = zeros(data_length, 1);
         end        
         
         function init(UE)
@@ -62,6 +69,8 @@ classdef UserEquipment < handle
         end
         
         function update(UE, sim_time, dt)
+            
+            UE.hist_index = int32(sim_time/dt); % #iteration we're at
             
             UE.pos(1) = dt * UE.vel + UE.pos(1); %+ UE.pos(1);
             
@@ -75,21 +84,33 @@ classdef UserEquipment < handle
                 UE.buffer = UE.buffer - UE.requested_rate * dt;
                 if UE.buffer < 0
                     %TODO signal bad QoS
-                    UE.lost_data = UE.lost_data - UE.buffer;
+                    UE.lost_data_hist(UE.hist_index) = - UE.buffer;
                     
                     UE.buffer = 0;
                 end
             end
+            
+            if UE.buffer == 0
+               UE.wait_time_hist(UE.hist_index) = dt; 
+            end
+            
+            UE.buffer_hist(UE.hist_index) = UE.buffer;
         end
         
         function receive_file_chunk(UE, file_chunk)
             UE.buffer = UE.buffer + file_chunk;
             if UE.buffer > UE.max_buffer
                 %TODO signal bad QoS
-                UE.lost_data = UE.lost_data + (UE.buffer - UE.max_buffer);
-                
+                UE.lost_data_hist(UE.hist_index) = (UE.buffer - UE.max_buffer);
                 UE.buffer = UE.max_buffer; 
             end
+        end
+        
+        function [ue_buffer, ue_max_buffer, ue_lost_data, ue_waiting_time] = dump_data(UE)
+            ue_buffer = UE.buffer_hist;
+            ue_max_buffer = UE.max_buffer;
+            ue_lost_data = UE.lost_data_hist;
+            ue_waiting_time = UE.wait_time_hist;
         end
     end
     

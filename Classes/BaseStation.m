@@ -57,7 +57,7 @@ classdef BaseStation < handle
             end          
             
             BS.BF = MVDR_Beamforming(0.01, BS.lambda, BS.ant_pos);
-            BS.max_memory = int64(16e9 * 8); %[Gbits]
+            BS.max_memory = int64(16e9 * 8); %[bits]
         end
         
         function init(BS)
@@ -98,6 +98,7 @@ classdef BaseStation < handle
 
                 BS.handin(dt);
                 if isequal(BS, BS.sharedData.servingBS) 
+                    %% see DOC/meanconntime_bias.jpg for reference
                     a = pi/6; %30 deg                   
                     if (BS.AoD(1) >= a && BS.AoD(1) <= pi-a) || (BS.AoD(1) >= -(pi-a)  && BS.AoD(1) <= -a)
                         BS.BF.update_state(BS.AoD); %UE is in useful sweep range (+- 60 deg)
@@ -106,7 +107,7 @@ classdef BaseStation < handle
                     end
                 else                    
                     BS.BF.update_state([2*pi*rand(1), pi*rand(1)]);
-                end
+                end                
             else
                 %don't update Beam Forming vector, keep channel params, update only ssf values
                 BS.find_AoD();
@@ -117,15 +118,22 @@ classdef BaseStation < handle
             
             if mod(sim_time, 1) < 1e10
                 %update every 1 sec the random n of users connected to this station
-                BS.n = poissrnd(BS.mean_n); 
+                n_ = poissrnd(BS.mean_n); 
+                if n_ > 1 
+                    BS.n = n_;
+                else
+                    BS.n = 1;
+                end
             end
         end
         
         function mem = get_mem_for_UE(BS)
-            %at this point the station is offering a certain amout of space for the UE. 
+            %at this point the station is offering a certain amount of space for the UE. 
             %It need not be the case the BS will actually receive the file
+            %% see DOC/meanconntime_bias.jpg for reference
             mean_conn_time = ( abs(BS.pos(2) - BS.sharedData.UE.pos(2)) * sin(pi/3) / sin(pi/6) ) * 2 / BS.sharedData.UE.vel;
-            mem = Bs.sharedData.UE.requested_rate * mean_conn_time;
+            %%
+            mem = int64(BS.sharedData.UE.requested_rate * 10 * mean_conn_time * 1e9); %[bits]
             if mem > BS.memory
                 mem = 0;
             end
@@ -139,12 +147,12 @@ classdef BaseStation < handle
         function file_chunk = download_file(BS, dt, rate)
             file_chunk = 0;
             if isequal(BS, BS.sharedData.servingBS)  
-                if ~(BS.mem == 0)
+                if ~(BS.memory == 0)
                     file_chunk = int64(round(rate * dt));
-                    BS.mem = BS.mem - file_chunk;
-                    if BS.mem < 0
-                        file_chunk = file_chunk + BS.mem;
-                        BS.mem = 0;
+                    BS.memory = BS.memory - file_chunk;
+                    if BS.memory < 0
+                        file_chunk = file_chunk + BS.memory;
+                        BS.memory = 0;
                     end
                 end
             end
@@ -177,22 +185,37 @@ classdef BaseStation < handle
         end               
         
         function handin(BS, dt)
-            length = abs(BS.pos(2) - BS.sharedData.UE.pos(2)) * sin(pi/3) / sin(pi/6); %optimal  BS' cell **HALF** chord length relative to UE
-            bias = (BS.memory > 0) * min(max(0, BS.sharedData.Ue.pos(1) - (BS.pos(1) - length ) / (length*2) ), 1);
-            P = BS.signal_power_at_ue * (1 + bias); %similar idea as presented in DOC/iswcs-symbiocity.pdf 
-            if  P > BS.sharedData.servingBS.signal_power_at_ue && BS.TTT >= 0.2 % BS.PL < BS.sharedData.servingBS.PL && BS.TTT >= 0.5 % 
-                BS.sharedData.servingBS.handover(BS) %ask the old BS to hand over the UE
-                BS.sharedData.servingBS = BS;
-                BS.TTT = 0;
-            elseif P > BS.sharedData.servingBS.signal_power_at_ue && BS.TTT < 0.2 % BS.PL < BS.sharedData.servingBS.PL && BS.TTT < 0.5 % 
-                BS.TTT = BS.TTT + dt;
-            else
-                BS.TTT = 0;
-            end            
+%             if BS.PL < BS.sharedData.servingBS.PL
+%                 BS.sharedData.servingBS.handover(BS)
+%                 BS.sharedData.servingBS = BS;
+%             end
+            
+            outage_thresh = 10^( -5 /10);
+            thermal_noise = 10^((-174+7)/10) * (BS.BW / BS.n );
+            SNR = BS.signal_power_at_ue / thermal_noise;
+            if ~isequal(BS, BS.sharedData.servingBS) && (SNR > outage_thresh)
+                minTTT = 0.3;  
+                %% see DOC/meanconntime_bias.jpg for reference
+                length = abs(BS.pos(2) - BS.sharedData.UE.pos(2)) * sin(pi/3) / sin(pi/6); %optimal  BS' cell **HALF** chord length relative to UE               
+                delta = (BS.sharedData.UE.pos(1) - (BS.pos(1) - (length + 25)) )/ ((length + 25)*2 ); % -+25m tolerance
+                bias = (BS.memory > 0) * delta * (delta >= 0 && delta <= 1);
+                %%         
+                P = BS.signal_power_at_ue * (1 + bias); %similar idea as presented in DOC/iswcs-symbiocity.pdf                 
+                if  P > BS.sharedData.servingBS.signal_power_at_ue && BS.TTT >= minTTT % BS.PL < BS.sharedData.servingBS.PL && BS.TTT >= 0.5 % 
+                    BS.sharedData.servingBS.handover(BS) %ask the old BS to hand over the UE
+                    BS.sharedData.servingBS = BS;
+                    BS.TTT = 0;
+                elseif P > BS.sharedData.servingBS.signal_power_at_ue && BS.TTT < minTTT % BS.PL < BS.sharedData.servingBS.PL && BS.TTT < 0.5 % 
+                    BS.TTT = BS.TTT + dt;
+                else
+                    BS.TTT = 0;
+                end     
+            end
         end
         
         function handover(BS, to_next_BS)
-            fprintf('handover from %d to %d;\n', BS.ID, to_next_BS.ID);
+%             fprintf('handover from %d to %d;\n', BS.ID, to_next_BS.ID);
+%             fprintf('UE xpos: %3.3f\t BS xpos: %3.3f\n', BS.sharedData.UE.pos(1), to_next_BS.pos(1));
             BS.BF.update_state([2*pi*rand(1), pi*rand(1)]);
             BS.compute_signal_power(); %this station is interfering, needed here to avoid errors
         end      
