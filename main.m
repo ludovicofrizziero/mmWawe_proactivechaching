@@ -192,12 +192,13 @@ parfor iter = 1:n_rep_PL
         s.ue_max_buffer = ue_max_buffer;
         s.ue_lost_data = ue_lost_data;
         s.ue_waiting_time = ue_waiting_time;
+        s.ue_requested_rate = UE.requested_rate;
         s.rate = rate;
         s.servingBS_IDs = servingBS_IDs;
         s.BSs_pos = BSs_pos;
         s.BSs_mem_state = BSs_mem_state;
         s.X = X;
-        s.chunks = chunks;
+        s.chunks = chunks;        
         
         savings{iter} = s;
     end

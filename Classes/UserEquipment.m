@@ -81,16 +81,13 @@ classdef UserEquipment < handle
             end
                        
             if UE.buffer > 0
-                UE.buffer = UE.buffer - UE.requested_rate * dt;
-                if UE.buffer < 0
-                    %TODO signal bad QoS
-                    UE.lost_data_hist(UE.hist_index) = - UE.buffer;
-                    
+                UE.buffer = UE.buffer - int64(UE.requested_rate * 1e9 * dt);
+                if UE.buffer < 0                     
                     UE.buffer = 0;
                 end
             end
             
-            if UE.buffer == 0
+            if UE.buffer == 0 && UE.hist_index > 1
                UE.wait_time_hist(UE.hist_index) = dt; 
             end
             

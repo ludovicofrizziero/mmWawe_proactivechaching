@@ -133,7 +133,7 @@ classdef BaseStation < handle
             %% see DOC/meanconntime_bias.jpg for reference
             mean_conn_time = ( abs(BS.pos(2) - BS.sharedData.UE.pos(2)) * sin(pi/3) / sin(pi/6) ) * 2 / BS.sharedData.UE.vel;
             %%
-            mem = int64(BS.sharedData.UE.requested_rate * 10 * mean_conn_time * 1e9); %[bits]
+            mem = int64(BS.sharedData.UE.requested_rate * mean_conn_time * 1e9); %[bits]
             if mem > BS.memory
                 mem = 0;
             end
