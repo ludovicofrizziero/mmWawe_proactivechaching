@@ -12,7 +12,7 @@ title('serving BS ID');
 
 figure;
 hold on
-plot(1:max(size(s.BSs_mem_state)), s.mem_allo, 'o');
+plot(1:max(size(s.BSs_mem_state)), s.chunks*s.X, 'o');
 plot(1:max(size(s.BSs_mem_state)), s.BSs_mem_state, '*');
 title('memory state at BSs');
 legend('starting situation', 'final situation');

@@ -45,7 +45,7 @@ R = d_R + N_0*W_L; % road width
 BS_per_km = 10;
 
 %% parameters for simulation
-n_rep_PL = 1;
+n_rep_PL = 4;
 theta_out = -5; %SINR outage threshold [dB]
 outage_thresh = 10^(theta_out/10); %SINR outage threshold
 T_sim = floor(1000/v); % simulation duration [s]
@@ -53,7 +53,7 @@ dt = 0.1; %  simulation step [s]
 T_tracking = 0.1; % tracking periodicity for BF vector [s]
 T_mul_users_update = 1; %how often BSs change n of connected users 
 t_H = 0.3; % udpate of channel instances
-n_users = 20; % mean number of users per BS, poisson r.v.
+n_users = 25; % mean number of users per BS, poisson r.v.
 
 DEBUG = n_rep_PL < 2;
 SAVE_DATA_VERBOSE = true;
@@ -62,7 +62,7 @@ SAVE_DATA_VERBOSE = true;
 rate_tmp = cell(n_rep_PL, 1);
 tic; 
 savings = cell(n_rep_PL, 1);
-for iter = 1:n_rep_PL  
+parfor iter = 1:n_rep_PL  
     
     fprintf('iteration: %d\n', iter);      
     
@@ -198,8 +198,7 @@ for iter = 1:n_rep_PL
         s.BSs_pos = BSs_pos;
         s.BSs_mem_state = BSs_mem_state;
         s.X = X;
-        s.chunks = chunks; 
-        s.mem_allo = chunks*X';
+        s.chunks = chunks;        
         
         savings{iter} = s;
     end

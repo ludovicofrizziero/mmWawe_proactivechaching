@@ -50,10 +50,10 @@ classdef UserEquipment < handle
             
             UE.BF = MVDR_Beamforming(0.01, UE.lambda, UE.ant_pos);
             rates = [0.016, 0.024, 0.035, 0.045, 0.053, 0.068]; %1440p and 2160p (4K) common bitrates (compressed video) [Gbps]
-            UE.requested_rate = rates(randi(size(rates), 1));      
+            UE.requested_rate = rates(randi(size(rates), 1))*(1/0.7);      % to take account 30% overhead+coding
             M = 1e9 * 8;   %[bits] mean
             V = 350e6 * 8; %[bits] variance            
-            UE.requested_file_size = (UE.requested_rate)*1000/(UE.vel)*1e9;    %int64(sum(lognrnd(log(M^2/sqrt(V+M^2)), sqrt(log(V/M^2 + 1))))); 
+            UE.requested_file_size = (UE.requested_rate)*1000/(UE.vel)*;   %int64(sum(lognrnd(log(M^2/sqrt(V+M^2)), sqrt(log(V/M^2 + 1))))); 
             UE.max_buffer = int64(0.5e9 * 8); %[bits]
             UE.buffer = int64(1); %else wait_time is wrongly updated at the very first step            
             

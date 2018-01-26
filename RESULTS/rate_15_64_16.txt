@@ -1,0 +1,2 @@
+configuration:	15 BSperKm	64 n_tx	16 n_rx
+   1->	min	0.000000	mean	0.220566	max	0.901511	std	0.192490	Gbps
