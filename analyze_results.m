@@ -23,7 +23,10 @@ plot(s.rate, '-');
 title('rate [bit/s]');
 
 figure;
+hold on
 plot(s.ue_buffer);
+plot([1,max(size(s.ue_buffer))], ones(2,1) * double(s.ue_max_buffer));
+hold off
 title(strcat('UE buffer (with consumption rate of', num2str(s.ue_requested_rate, ' %1.3f'), ' Gbps )'));
 
 figure;

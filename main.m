@@ -39,13 +39,13 @@ n_rx = 16; %WARNING: all values must be perfect squares
 v = 100/3.6; % speed [m/s]
 road_length = 1000;
 d_R = 2.5; 
-W_L = 3.7; % lane width
+W_L = 3.75; % lane width
 N_0 = 3; % # of obstacle lanes per direction
 R = d_R + N_0*W_L; % road width
 BS_per_km = 10;
 
 %% parameters for simulation
-n_rep_PL = 4;
+n_rep_PL = 1;
 theta_out = -5; %SINR outage threshold [dB]
 outage_thresh = 10^(theta_out/10); %SINR outage threshold
 T_sim = floor(1000/v); % simulation duration [s]
@@ -62,7 +62,7 @@ SAVE_DATA_VERBOSE = true;
 rate_tmp = cell(n_rep_PL, 1);
 tic; 
 savings = cell(n_rep_PL, 1);
-parfor iter = 1:n_rep_PL  
+for iter = 1:n_rep_PL  
     
     fprintf('iteration: %d\n', iter);      
     
@@ -74,20 +74,23 @@ parfor iter = 1:n_rep_PL
         
     n_BS_top = poissrnd(BS_per_km/1000 * (road_length),1,1); % number of BSs
     n_BS_bottom = poissrnd(BS_per_km/1000 * (road_length),1,1); % number of BSs   
+%     n_BS_top = BS_per_km;
+%     n_BS_bottom = BS_per_km; % number of BSs 
     BS_distance_avg_top = 1000/n_BS_top;
     BS_distance_avg_bottom = 1000/n_BS_bottom;
     delta_top = ceil(BS_distance_avg_top/8);
-    delta_bottom = ceil(BS_distance_avg_bottom/8);    
-    
+    delta_bottom = ceil(BS_distance_avg_bottom/8); 
+        
+    offset = 100; %[meters]
     allBS = cell(n_BS_top + n_BS_bottom, 1);
     for i = 1:n_BS_top
-        pos = [(i-1)*BS_distance_avg_top+unifrnd(-delta_top , delta_top) , 2 * R, 8];
-        allBS{i} = BaseStation(i, n_tx, f, BW, pos, t_H, T_tracking, n_users); 
+        pos = [offset + (i-1)*BS_distance_avg_top+unifrnd(-delta_top , delta_top) , 2 * R, 8];
+        allBS{i} = BaseStation(2*i, n_tx, f, BW, pos, t_H, T_tracking, n_users); 
     end
     
     for i = 1:n_BS_bottom
-        pos = [(i-1)*BS_distance_avg_bottom+unifrnd(-delta_bottom , delta_bottom) , 0, 8];
-        allBS{i + n_BS_top} = BaseStation(i + n_BS_top, n_tx, f, BW, pos, t_H, T_tracking, n_users); 
+        pos = [offset + (i-1)*BS_distance_avg_bottom+unifrnd(-delta_bottom , delta_bottom) , 0, 8];
+        allBS{i + n_BS_top} = BaseStation(2*i-1, n_tx, f, BW, pos, t_H, T_tracking, n_users); 
     end        
     
     shared_data.servingBS = allBS{1}; %just for initialization
@@ -97,31 +100,17 @@ parfor iter = 1:n_rep_PL
     end
     
     %% allocate file to BS
-    [X, chunks] = solve_allocation_problem(allBS, UE, DEBUG);
+%     [X, chunks] = solve_allocation_problem(allBS, UE, DEBUG);
+    [X, chunks] = VCG_auction_solver(allBS, UE, DEBUG);
     
     for i = 1:size(X)
         allBS{i}.allocate_memory_for_ue(chunks(i) * X(i));
     end
     
     if DEBUG
-        disp(X');
+        disp(int8(X'));
     end
-    %%
-    
-    %% for debug, plot BS disposition
-    if DEBUG
-        figure;
-        hold on;
-        for i = 1:n_BS_top+n_BS_bottom
-            plot(allBS{i}.pos(1), allBS{i}.pos(2), '*')
-            text(allBS{i}.pos(1), allBS{i}.pos(2)+1, int2str(allBS{i}.ID));
-            if allBS{i}.memory > 0
-                text(allBS{i}.pos(1), allBS{i}.pos(2)+3, num2str(double(allBS{i}.memory), '%1.3e'));
-            end
-        end
-        hold off;
-    end
-    %%
+    %%        
     
     %% start simulation
     index_internal = 1;
@@ -135,12 +124,10 @@ parfor iter = 1:n_rep_PL
             allBS{i}.update(t, dt);
         end
         
-        %% for debug
         if DEBUG
-            fprintf('-\n');
+            fprintf('-\n')
         end
-        %%
-     
+                
         SINR_num = shared_data.servingBS.signal_power_at_ue; % numerator of SINR (depends on the beamwidth)
         
         SINR_interference = -SINR_num; % we don't want such signal_power_at_ue here, but in the for loop we sum it for "error"
@@ -167,15 +154,7 @@ parfor iter = 1:n_rep_PL
         rate(index_internal) = r;
         servingBS_IDs(index_internal) = shared_data.servingBS.ID;
         index_internal = index_internal + 1; 
-    end   
-
-    if DEBUG
-        for i = 1:max(size(allBS))
-            fprintf('BS %d: %1.3e bits remaining\n', allBS{i}.ID, double(allBS{i}.memory));
-        end
-        
-        fprintf('UE buffer load: %1.3e %% \n', double(UE.buffer)/double(UE.max_buffer));
-    end
+    end    
     
     if SAVE_DATA_VERBOSE
         [ue_buffer, ue_max_buffer, ue_lost_data, ue_waiting_time] = UE.dump_data();
@@ -221,7 +200,7 @@ for iter =  1:n_rep_PL
     max_rate_final(1, iter) = rate_tmp{iter}(3);
     std_rate_final(1, iter) = rate_tmp{iter}(4);
 end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 formatSpec = '%4d->\tmin\t%2.6f\tmean\t%2.6f\tmax\t%2.6f\tstd\t%2.6f\tGbps\n';  %tab separeted values
 tmp = 1:n_rep_PL;

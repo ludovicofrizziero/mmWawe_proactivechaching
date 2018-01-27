@@ -133,7 +133,7 @@ classdef BaseStation < handle
             %% see DOC/meanconntime_bias.jpg for reference
             mean_conn_time = ( abs(BS.pos(2) - BS.sharedData.UE.pos(2)) * sin(pi/3) / sin(pi/6) ) * 2 / BS.sharedData.UE.vel;
             %%
-            mem = int64((2 * BS.sharedData.UE.requested_rate * mean_conn_time + ( 0.0*randn(1)))* 1e9) ; %[bits]
+            mem = int64((2 * BS.sharedData.UE.requested_rate * mean_conn_time + ( + *randn(1)))* 1e9) ; %[bits]
             if mem > BS.memory
                 mem = 0;
             end
@@ -203,7 +203,7 @@ classdef BaseStation < handle
                 length = abs(BS.pos(2) - BS.sharedData.UE.pos(2)) * sin(pi/3) / sin(pi/6); %optimal  BS' cell **HALF** chord length relative to UE               
                 %delta = (BS.sharedData.UE.pos(1) - (BS.pos(1) - (length + 25)) )/ ((length + 25)*2 ); % -+25m tolerance
                 %bias = (BS.memory > 0) * 2 * (1 - delta) * (delta >= 0 && delta <= 1);
-                bias = (BS.memory > 0) * 10 * ((BS.sharedData.UE.pos(1) - (BS.pos(1) - (length + 25))) > 0);
+                bias = (BS.memory > 0) * 5 * ((BS.sharedData.UE.pos(1) - (BS.pos(1) - (length + 25))) > 0);
                 %%         
                 P = BS.signal_power_at_ue * (1 + bias); %similar idea as presented in DOC/iswcs-symbiocity.pdf                 
                 if  P > BS.sharedData.servingBS.signal_power_at_ue && BS.TTT >= minTTT % BS.PL < BS.sharedData.servingBS.PL && BS.TTT >= 0.5 % 
