@@ -29,6 +29,7 @@ function [X, chunks] = VCG_auction_solver(allBS, UE, DEBUG)
     K_old = -1;
     I = 1:N;
     X = [];
+    i = 0;
     %perm = randperm(N);
     %chunks  = chunks(perm); %this is needed only to avoid selecting in order only the first BSs when they all have same chunks
     while K > K_old && ~isempty(I)
@@ -46,6 +47,8 @@ function [X, chunks] = VCG_auction_solver(allBS, UE, DEBUG)
         K = sum( a .* b ) * c;        
     end
 
+    X = setdiff(X, i); %remove last entry since caused a diminishing of K
+    
     tmp = zeros(N,1);
     tmp(X) = 1;
     X = tmp;

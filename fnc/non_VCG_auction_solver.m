@@ -28,16 +28,14 @@ function [X, chunks] = non_VCG_auction_solver(allBS, UE, DEBUG)
     K = 0;
     K_old = -1;
     I = 1:N;
-    X = [];
-    %perm = randperm(N);
-    %chunks  = chunks(perm); %this is needed only to avoid selecting in order only the first BSs when they all have same chunks
+    X = [];   
     while K > K_old && ~isempty(I)
         
         Z_old = 0;
-        best = 0;
-        for i = I
+        best = 1;
+        for i = setdiff(I, X)
             Y = [X; i];
-            Z = ((double(chunks(i)) / 1e9 ) / sum(double(chunks(Y)) / 1e9)) * (1 / w(i)) * exp((sum(S(Y))-1000)^2 / (2 * 1000));
+            Z = ((double(chunks(i)) / 1e9 ) / sum(double(chunks(Y)) / 1e9)) * (1 / w(i));
             if Z > Z_old
                 best = i;
                 Z_old = Z;
@@ -45,11 +43,6 @@ function [X, chunks] = non_VCG_auction_solver(allBS, UE, DEBUG)
         end
         
         X = [X; best];
-        
-%         [~, i] = max(chunks(I)); %argmax
-%         X = [X; I(i)];
-%         I(i) = [];
-        
        
         K_old = K; 
         B = sum(double(chunks(X)) / 1e9);
@@ -60,6 +53,8 @@ function [X, chunks] = non_VCG_auction_solver(allBS, UE, DEBUG)
         K = sum( a .* b * c);        
     end
 
+    X = setdiff(X, best); %remove last entry since caused a diminishing of K
+    
     tmp = zeros(N,1);
     tmp(X) = 1;
     X = tmp;

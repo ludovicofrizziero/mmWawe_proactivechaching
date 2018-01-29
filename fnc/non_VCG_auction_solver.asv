@@ -28,22 +28,21 @@ function [X, chunks] = non_VCG_auction_solver(allBS, UE, DEBUG)
     K = 0;
     K_old = -1;
     I = 1:N;
-    X = [];
-    %perm = randperm(N);
-    %chunks  = chunks(perm); %this is needed only to avoid selecting in order only the first BSs when they all have same chunks
+    X = [];   
     while K > K_old && ~isempty(I)
         
-        Z = [];
-        be
-        for i = I
+        Z_old = 0;
+        best = 0;
+        for i = setdiff(I, X)            
             Y = [X; i];
-            Z = []
+            Z = ((double(chunks(i)) / 1e9 ) / sum(double(chunks(Y)) / 1e9)) * (1 / w(i));
+            if Z > Z_old
+                best = i;
+                Z_old = Z;
+            end
         end
         
-        [~, i] = max(chunks(I)); %argmax
-        X = [X; I(i)];
-        I(i) = [];
-        
+        X = [X; best];        
        
         K_old = K; 
         B = sum(double(chunks(X)) / 1e9);

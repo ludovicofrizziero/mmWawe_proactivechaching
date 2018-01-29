@@ -36,7 +36,7 @@ n_tx = 64; %WARNING: all values must be perfect squares
 n_rx = 16; %WARNING: all values must be perfect squares
 
 %% paramers for road
-v = 100/3.6; % speed [m/s]
+v = 10/3.6; % speed [m/s]
 road_length = 1000;
 d_R = 2.5; 
 W_L = 3.75; % lane width
@@ -91,7 +91,7 @@ for iter = 1:n_rep_PL
     for i = 1:n_BS_bottom
         pos = [offset + (i-1)*BS_distance_avg_bottom+unifrnd(-delta_bottom , delta_bottom) , 0, 8];
         allBS{i + n_BS_top} = BaseStation(2*i-1, n_tx, f, BW, pos, t_H, T_tracking, n_users); 
-    end        
+    end    
     
     shared_data.servingBS = allBS{1}; %just for initialization
     UE.init();
@@ -100,8 +100,7 @@ for iter = 1:n_rep_PL
     end
     
     %% allocate file to BS
-%     [X, chunks] = solve_allocation_problem(allBS, UE, DEBUG);
-    [X, chunks] = VCG_auction_solver(allBS, UE, DEBUG);
+    [X, chunks] = non_VCG_auction_solver(allBS, UE, DEBUG);
     
     for i = 1:size(X)
         allBS{i}.allocate_memory_for_ue(chunks(i) * X(i));
@@ -110,7 +109,7 @@ for iter = 1:n_rep_PL
     if DEBUG
         disp(int8(X'));
     end
-    %%        
+    %%                          
     
     %% start simulation
     index_internal = 1;
@@ -122,10 +121,6 @@ for iter = 1:n_rep_PL
         
         for i = 1:length(allBS)
             allBS{i}.update(t, dt);
-        end
-        
-        if DEBUG
-            fprintf('-\n')
         end
                 
         SINR_num = shared_data.servingBS.signal_power_at_ue; % numerator of SINR (depends on the beamwidth)
@@ -145,7 +140,8 @@ for iter = 1:n_rep_PL
         
         %% file transmission
         %consider rate for the n-users loaded BS
-        r = shared_data.servingBS.BW * log2(1+SINR) / shared_data.servingBS.n;   %OUTPUT of this Monte Carlo iteration        
+        overhead_performance_loss = 1 - 0.3; %consider 30% of performance loss due to modulation / packet headers ...
+        r = shared_data.servingBS.BW * log2(1+SINR) / shared_data.servingBS.n * overhead_performance_loss;       
         
         f_chunk = shared_data.servingBS.download_file(dt, r);
         UE.receive_file_chunk(f_chunk);
@@ -161,7 +157,7 @@ for iter = 1:n_rep_PL
         BSs_pos = zeros(max(size(allBS)), 3);
         BSs_mem_state = zeros(max(size(allBS)), 1);
         for i = 1:max(size(allBS))
-            fprintf('BS %d: %1.3e bits remaining\n', allBS{i}.ID, double(allBS{i}.memory));
+%             fprintf('BS %d: %1.3e bits remaining\n', allBS{i}.ID, double(allBS{i}.memory));
             BSs_pos(i, :) = allBS{i}.pos;
             BSs_mem_state(i) = allBS{i}.memory;
         end        

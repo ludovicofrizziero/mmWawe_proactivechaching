@@ -133,14 +133,16 @@ classdef BaseStation < handle
             %% see DOC/meanconntime_bias.jpg for reference
             mean_conn_time = ( abs(BS.pos(2) - BS.sharedData.UE.pos(2)) * sin(pi/3) / sin(pi/6) ) * 2 / BS.sharedData.UE.vel;
             %%
-            mem = int64((2 * BS.sharedData.UE.requested_rate * mean_conn_time + ( 0.0*randn(1)))* 1e9) ; %[bits]
+            mem = int64( (BS.sharedData.UE.requested_rate + abs( 0.02*randn(1) ) )* mean_conn_time * 1e9 ) ; %[bits]
+            
+            %mem = BS.sharedData.UE.max_buffer +( 0.03*randn(1) )*1e9;
             if mem > BS.memory
                 mem = 0;
             end
-    
-%             ttt = [1e7 * 8, 2e7*8, 3e7*8];
-%             i = randi(3,1);
-%             mem = ttt(i);
+            
+            if mem < 0
+                mem = 0;
+            end
         end
         
         function allocate_memory_for_ue(BS, mem)
@@ -194,27 +196,37 @@ classdef BaseStation < handle
 %                 BS.sharedData.servingBS = BS;
 %             end
             
-            outage_thresh = 10^( -5 /10);
-            thermal_noise = 10^((-174+7)/10) * (BS.BW / BS.n );
-            SNR = BS.signal_power_at_ue / thermal_noise;
-            if ~isequal(BS, BS.sharedData.servingBS) && (SNR > outage_thresh)
-                minTTT = 0.3;  
-                %% see DOC/meanconntime_bias.jpg for reference
-                length = abs(BS.pos(2) - BS.sharedData.UE.pos(2)) * sin(pi/3) / sin(pi/6); %optimal  BS' cell **HALF** chord length relative to UE               
-                %delta = (BS.sharedData.UE.pos(1) - (BS.pos(1) - (length + 25)) )/ ((length + 25)*2 ); % -+25m tolerance
-                %bias = (BS.memory > 0) * 2 * (1 - delta) * (delta >= 0 && delta <= 1);
-                bias = (BS.memory > 0) * 10 * ((BS.sharedData.UE.pos(1) - (BS.pos(1) - (length + 25))) > 0);
-                %%         
-                P = BS.signal_power_at_ue * (1 + bias); %similar idea as presented in DOC/iswcs-symbiocity.pdf                 
-                if  P > BS.sharedData.servingBS.signal_power_at_ue && BS.TTT >= minTTT % BS.PL < BS.sharedData.servingBS.PL && BS.TTT >= 0.5 % 
+%             outage_thresh = 10^( -5 /10);
+%             thermal_noise = 10^((-174+7)/10) * (BS.BW / BS.n );
+%             SNR = BS.signal_power_at_ue / thermal_noise;
+%             if ~isequal(BS, BS.sharedData.servingBS) && (SNR > outage_thresh)
+%                 minTTT = 0.3;  
+%                 %% see DOC/meanconntime_bias.jpg for reference
+%                 length = abs(BS.pos(2) - BS.sharedData.UE.pos(2)) * sin(pi/3) / sin(pi/6); %optimal  BS' cell **HALF** chord length relative to UE               
+%                 %delta = (BS.sharedData.UE.pos(1) - (BS.pos(1) - (length + 25)) )/ ((length + 25)*2 ); % -+25m tolerance
+%                 %bias = (BS.memory > 0) * 2 * (1 - delta) * (delta >= 0 && delta <= 1);
+%                 bias =  10 * ((BS.sharedData.UE.pos(1) - (BS.pos(1) - (length + 25))) > 0);
+%                 %%         
+%                 P = (BS.memory > 0) * BS.signal_power_at_ue * (1 + bias); %similar idea as presented in DOC/iswcs-symbiocity.pdf                 
+%                 if  P > BS.sharedData.servingBS.signal_power_at_ue && BS.TTT >= minTTT % BS.PL < BS.sharedData.servingBS.PL && BS.TTT >= 0.5 % 
+%                     BS.sharedData.servingBS.handover(BS) %ask the old BS to hand over the UE
+%                     BS.sharedData.servingBS = BS;
+%                     BS.TTT = 0;
+%                 elseif P > BS.sharedData.servingBS.signal_power_at_ue && BS.TTT < minTTT % BS.PL < BS.sharedData.servingBS.PL && BS.TTT < 0.5 % 
+%                     BS.TTT = BS.TTT + dt;
+%                 else
+%                     BS.TTT = 0;
+%                 end     
+%             end
+            
+            if ~isequal(BS, BS.sharedData.servingBS) && BS.sharedData.servingBS.memory <= 0
+                d1 = norm(BS.sharedData.servingBS.pos - BS.sharedData.UE.pos);
+                d2 = norm(BS.pos - BS.sharedData.UE.pos);
+                
+                if d1 > d2 && BS.memory > 0
                     BS.sharedData.servingBS.handover(BS) %ask the old BS to hand over the UE
                     BS.sharedData.servingBS = BS;
-                    BS.TTT = 0;
-                elseif P > BS.sharedData.servingBS.signal_power_at_ue && BS.TTT < minTTT % BS.PL < BS.sharedData.servingBS.PL && BS.TTT < 0.5 % 
-                    BS.TTT = BS.TTT + dt;
-                else
-                    BS.TTT = 0;
-                end     
+                end
             end
         end
         
