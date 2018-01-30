@@ -32,7 +32,7 @@ classdef UserEquipment < handle
     end
     
     methods   
-        function UE = UserEquipment(antenna_array, f, position, vel, t_tracking, data_length) %constructor
+        function UE = UserEquipment(antenna_array, f, position, vel, rate, t_tracking, data_length) %constructor
             UE.ant_arr = antenna_array;
             UE.pos = position;
             UE.vel = vel;
@@ -49,8 +49,9 @@ classdef UserEquipment < handle
             end
             
             UE.BF = MVDR_Beamforming(0.01, UE.lambda, UE.ant_pos);
-            rates = [0.016, 0.024, 0.035, 0.045, 0.053, 0.068]; %1440p and 2160p (4K) common bitrates (compressed video) [Gbps]
-            UE.requested_rate = rates(randi(size(rates), 1));
+%             rates = [0.016, 0.024, 0.035, 0.045, 0.053, 0.068]; %1440p and 2160p (4K) common bitrates (compressed video) [Gbps]
+%             UE.requested_rate = rates(randi(size(rates), 1));
+            UE.requested_rate = rate;
             M = 1e9 * 8;   %[bits] mean
             V = 350e6 * 8; %[bits] variance            
             UE.requested_file_size = int64(sum(lognrnd(log(M^2/sqrt(V+M^2)), sqrt(log(V/M^2 + 1))))); 

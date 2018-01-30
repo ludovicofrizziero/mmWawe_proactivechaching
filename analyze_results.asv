@@ -2,8 +2,8 @@ clear all;
 close all;
 clc;
 
-all_files = dir('RESULTS//savings*');
-load(strcat('RESULTS//', all_files(1).name));
+all_files = ls('RESULTS//savings*');
+load(all_files());
 
 s = savings{1};
 

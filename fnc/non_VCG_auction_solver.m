@@ -1,4 +1,4 @@
-function [X, chunks] = non_VCG_auction_solver(allBS, UE, DEBUG)
+function [X, chunks] = non_VCG_auction_solver(allBS, UE, BS_per_km,DEBUG)
 
     N = max(size(allBS));
     chunks = zeros(N, 1); %this must be a col vector
@@ -7,17 +7,21 @@ function [X, chunks] = non_VCG_auction_solver(allBS, UE, DEBUG)
     end
         
     S = (double(chunks)/1e9) * UE.vel / UE.requested_rate; % [meters]
-    w = ones(N, 1);
-    for i = 1:N
-        l = abs(allBS{i}.pos(2) - allBS{i}.sharedData.UE.pos(2)) * sin(pi/3) / sin(pi/6);
-        for j = 1:N %BS are not ordered by distance hence need to serch all of them each time
-            if  i ~= j
-                if allBS{j}.pos(1) >= allBS{i}.pos(1) - l && allBS{j}.pos(1) <= allBS{i}.pos(1) + S(i) - l
-                    w(j) = w(j) + 1.0;
-                end
-            end
-        end
-    end
+%     w = ones(N, 1);
+%     for i = 1:N
+%         l = abs(allBS{i}.pos(2) - allBS{i}.sharedData.UE.pos(2)) * sin(pi/3) / sin(pi/6);
+%         for j = 1:N %BS are not ordered by distance hence need to serch all of them each time
+%             if  i ~= j
+%                 if allBS{j}.pos(1) >= allBS{i}.pos(1) - l && allBS{j}.pos(1) <= allBS{i}.pos(1) + S(i) - l
+%                     w(j) = w(j) + 1.0;
+%                 end
+%             end
+%         end
+%     end
+    
+    %w = 1/N * (S - mean(S))*(S - mean(S))'; % cov matrix
+    w = 1/N * (S - 1000/BS_per_km)*(S - 1000/BS_per_km)'; % 'look alike' cov matrix
+    w = diag(w);
     
     for i = 1:N
         if chunks(i) > UE.max_buffer
@@ -32,18 +36,25 @@ function [X, chunks] = non_VCG_auction_solver(allBS, UE, DEBUG)
     while K > K_old && ~isempty(I)
         
         Z_old = 0;
-        best = 1;
+        best = 0;
         for i = setdiff(I, X)
             Y = [X; i];
-            Z = ((double(chunks(i)) / 1e9 ) / sum(double(chunks(Y)) / 1e9)) * (1 / w(i));
+            
+            Z = -1;
+            if w(i) ~= 0 && chunks(i) > 0
+                Z = ((double(chunks(i)) / 1e9 ) / sum(double(chunks(Y)) / 1e9)) * (1 / w(i));
+            end
+            
             if Z > Z_old
                 best = i;
                 Z_old = Z;
             end
         end
         
-        X = [X; best];
-       
+        if best ~= 0
+            X = [X; best];
+        end
+        
         K_old = K; 
         B = sum(double(chunks(X)) / 1e9);
         SX = sum(S(X));        

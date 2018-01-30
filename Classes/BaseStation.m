@@ -76,8 +76,8 @@ classdef BaseStation < handle
             BS.compute_signal_power();
                        
             BS.n = poissrnd(BS.mean_n);
-            M = 500e6 * 8; %mean
-            V = 350e6 * 8; %variance
+            M = 350e6 * 8; %mean
+            V = 200e6 * 8; %variance
             used_mem = int64(sum(lognrnd(log(M^2/sqrt(V+M^2)), sqrt(log(V/M^2 + 1)), 1, BS.n)));            
             BS.memory = max(0, BS.max_memory - used_mem); %free memory
         end
@@ -231,8 +231,8 @@ classdef BaseStation < handle
         end
         
         function handover(BS, to_next_BS)
-            fprintf('handover from %d to %d;\n', BS.ID, to_next_BS.ID);
-            fprintf('UE xpos: %3.3f\t BS xpos: %3.3f\n', BS.sharedData.UE.pos(1), to_next_BS.pos(1));
+%             fprintf('handover from %d to %d;\n', BS.ID, to_next_BS.ID);
+%             fprintf('UE xpos: %3.3f\t BS xpos: %3.3f\n', BS.sharedData.UE.pos(1), to_next_BS.pos(1));
             BS.BF.update_state([2*pi*rand(1), pi*rand(1)]);
             BS.compute_signal_power(); %this station is interfering, needed here to avoid errors
         end      

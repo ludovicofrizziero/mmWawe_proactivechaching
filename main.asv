@@ -42,7 +42,7 @@ d_R = 2.5;
 W_L = 3.75; % lane width
 N_0 = 3; % # of obstacle lanes per direction
 R = d_R + N_0*W_L; % road width
-BS_per_km = 15;
+BS_per_km = 10;
 
 %% parameters for simulation
 n_rep_PL = 4;
@@ -117,7 +117,7 @@ for v = [70, 80, 90, 100, 110, 120, 130]/3.6 %set of velocities for the ue [m/s]
             end
 
             %% allocate file to BS
-            [X, chunks] = non_VCG_auction_solver(allBS, UE, max(n_BS_bottom, n_BS_top), DEBUG);
+            [X, chunks] = non_VCG_auction_solver(allBS, UE, DEBUG);
 
             for i = 1:size(X)
                 allBS{i}.allocate_memory_for_ue(chunks(i) * X(i));
@@ -220,7 +220,7 @@ for v = [70, 80, 90, 100, 110, 120, 130]/3.6 %set of velocities for the ue [m/s]
         end
         %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-        formatSpec = '%4d->\tmin\t%2.6f\tmean\t%2.6f\tmax\t%2.6f\tstd\t%2.6f\tGbps\n';  %tab separated values
+        formatSpec = '%4d->\tmin\t%2.6f\tmean\t%2.6f\tmax\t%2.6f\tstd\t%2.6f\tGbps\n';  %tab separeted values
         tmp = 1:n_rep_PL;
         iter_vec = 1:n_rep_PL;
 
@@ -245,5 +245,4 @@ for v = [70, 80, 90, 100, 110, 120, 130]/3.6 %set of velocities for the ue [m/s]
         
     end
 end
-global_stop = toc(global_start);
-fprintf('total runtime: %6.3f s\n', global_stop);
+
