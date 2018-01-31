@@ -55,7 +55,7 @@ classdef UserEquipment < handle
             M = 1e9 * 8;   %[bits] mean
             V = 350e6 * 8; %[bits] variance            
             UE.requested_file_size = int64(sum(lognrnd(log(M^2/sqrt(V+M^2)), sqrt(log(V/M^2 + 1))))); 
-            UE.max_buffer = int64(UE.requested_rate * 10 * 1e9); %[bits] allow for up to 10 sec of buffering
+            UE.max_buffer = int64(UE.requested_rate * 15 * 1e9); %[bits] allow for up to 10 sec of buffering
             UE.buffer = int64(1); %else wait_time is wrongly updated at the very first step            
             
             UE.buffer_hist = zeros(data_length, 1);

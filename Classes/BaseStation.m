@@ -99,12 +99,12 @@ classdef BaseStation < handle
                 BS.handin(dt);
                 if isequal(BS, BS.sharedData.servingBS) 
                     %% see DOC/meanconntime_bias.jpg for reference
-                    a = pi/6; %30 deg                   
-                    if BS.AoD(1) >= a || BS.AoD(1) >= -(pi-a) 
+%                     a = pi/6; %30 deg                   
+%                     if BS.AoD(1) >= a || BS.AoD(1) >= -(pi-a) 
                         BS.BF.update_state(BS.AoD); %UE is in useful sweep range
-                    else
-                        BS.BF.update_state([pi/2, BS.AoD(2)]); %UE is outside useful sweep range
-                    end
+%                     else
+%                         BS.BF.update_state([pi/2, BS.AoD(2)]); %UE is outside useful sweep range
+%                     end
                 else                    
                     BS.BF.update_state([2*pi*rand(1), pi*rand(1)]);
                 end                
@@ -128,14 +128,15 @@ classdef BaseStation < handle
         end
         
         function mem = get_mem_for_UE(BS)
-            %at this point the station is offering a certain amount of space for the UE. 
-            %It need not be the case the BS will actually receive the file
-            %% see DOC/meanconntime_bias.jpg for reference
-            mean_conn_time = ( abs(BS.pos(2) - BS.sharedData.UE.pos(2)) * sin(pi/3) / sin(pi/6) ) * 2 / BS.sharedData.UE.vel;
-            %%
-            mem = int64( (BS.sharedData.UE.requested_rate + abs( 0.02*randn(1) ) )* mean_conn_time * 1e9 ) ; %[bits]
+%             %at this point the station is offering a certain amount of space for the UE. 
+%             %It need not be the case the BS will actually receive the file
+%             %% see DOC/meanconntime_bias.jpg for reference
+%             mean_conn_time = ( abs(BS.pos(2) - BS.sharedData.UE.pos(2)) * sin(pi/3) / sin(pi/6) ) * 2 / BS.sharedData.UE.vel;
+%             %%
+%             mem = int64( (BS.sharedData.UE.requested_rate + abs( 0.02*randn(1) ) )* mean_conn_time * 1e9 ) ; %[bits]
             
-            %mem = BS.sharedData.UE.max_buffer +( 0.03*randn(1) )*1e9;
+            mem = 0.75*BS.sharedData.UE.max_buffer +( 0.01*randn(1) )*1e9;
+            mem = int64(mem);
             if mem > BS.memory
                 mem = 0;
             end
