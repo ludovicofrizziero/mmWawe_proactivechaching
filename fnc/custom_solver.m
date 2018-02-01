@@ -3,6 +3,9 @@ function [X, chunks] = custom_solver(allBS, UE, BS_per_km, DEBUG)
     chunks = zeros(N, 1); %this must be a col vector
     for i = 1:N
         chunks(i) = allBS{i}.get_mem_for_UE(BS_per_km);
+        if chunks(i) > UE.max_buffer
+            chunks(i) = 0;
+        end
     end
     
     S = (double(chunks)/1e9) * UE.vel / UE.requested_rate; % [meters]
@@ -11,7 +14,7 @@ function [X, chunks] = custom_solver(allBS, UE, BS_per_km, DEBUG)
 %     w = max(1e-9, w);
 %     w = 1/w;
     
-    c = 1000/BS_per_km; 
+    %c = 1000/BS_per_km; 
     b = double(chunks)/1e9;
     X = zeros(N,1);
     SX = S' * X;
@@ -38,8 +41,8 @@ function [X, chunks] = custom_solver(allBS, UE, BS_per_km, DEBUG)
                 end
             end            
             
-            lambda = 1e3; %tradeoff weight
-            tmp_k = b' * Y - ((Y' * Y) \ d' * Y - c)^2 / lambda;
+            lambda = 9e2; %tradeoff weight
+            tmp_k = b' * Y - ((Y' * Y) \ d' * Y - 1000/(Y' * Y))^2 / lambda;
             
             if tmp_k > best_k
                 best_k = tmp_k;

@@ -45,7 +45,7 @@ R = d_R + N_0*W_L; % road width
 BS_per_km = 12;
 
 %% parameters for simulation
-n_rep_PL = 20; % number of repetition per choice of parameters
+n_rep_PL = 100; % number of repetition per choice of parameters
 theta_out = -5; %SINR outage threshold [dB]
 outage_thresh = 10^(theta_out/10); %SINR outage threshold
 % T_sim = floor(1000/v); % simulation duration [s]
@@ -236,4 +236,4 @@ for v = (70:10:130)/3.6 %set of velocities for the ue [m/s]
     end
 end
 global_stop = toc(global_start);
-fprintf('total runtime: %6.3f s\n', global_stop);
+fprintf('total runtime: %6.3f min\n', global_stop/60);
