@@ -3,7 +3,7 @@ function [X, chunks] = VCG_auction_solver(allBS, UE, BS_per_km, DEBUG)
     N = max(size(allBS));
     chunks = zeros(N, 1); %this must be a col vector
     for i = 1:N
-        chunks(i) = allBS{i}.get_mem_for_UE();
+        chunks(i) = allBS{i}.get_mem_for_UE(BS_per_km);
     end
         
     S = (double(chunks)/1e9) * UE.vel / UE.requested_rate; % [meters]
@@ -11,6 +11,7 @@ function [X, chunks] = VCG_auction_solver(allBS, UE, BS_per_km, DEBUG)
     w = 1/N * (S - mean(S))*(S - mean(S))'; % cov matrix
     %w = 1/N * (S - 1000/BS_per_km)*(S - 1000/BS_per_km)'; % 'look alike' cov matrix
     w = diag(w);
+    w = max(1e-9, w);
     
     for i = 1:N
         if chunks(i) > UE.max_buffer

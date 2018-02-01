@@ -37,6 +37,8 @@
 % figure;
 % plot(s.ue_lost_data);
 % title('UE lost data');
+% fprintf('PAUSED, PRESS ANY KEY TO CONTINUE\n');
+% pause();
 
 close all;
 clear all;
@@ -54,9 +56,9 @@ for v = vels
         bs_mem_left = [];
         for i = 1:max(size(saves))
             s = saves{i};
-            ue_d_lost = [ue_d_lost; sum(s.ue_lost_data(1:end-5))];%the last position are degenarete doue to simulation ending  
+            ue_d_lost = [ue_d_lost; sum(s.ue_lost_data(1:end-5))];%the last UE's positions are degenerate due to simulation ending  
             ue_w_time = [ue_w_time; sum(s.ue_waiting_time(1:end-5))];
-            bs_mem_left = [bs_mem_left; sum(s.BSs_mem_state(1:end-5))]; 
+            bs_mem_left = [bs_mem_left; sum(s.BSs_mem_state(1:end-15))]; 
         end
         
         idx = (v-70)/10 + 1;

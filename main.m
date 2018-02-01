@@ -42,10 +42,10 @@ d_R = 2.5;
 W_L = 3.75; % lane width
 N_0 = 3; % # of obstacle lanes per direction
 R = d_R + N_0*W_L; % road width
-BS_per_km = 10;
+BS_per_km = 12;
 
 %% parameters for simulation
-n_rep_PL = 4; % number of repetition per choice of parameters
+n_rep_PL = 20; % number of repetition per choice of parameters
 theta_out = -5; %SINR outage threshold [dB]
 outage_thresh = 10^(theta_out/10); %SINR outage threshold
 % T_sim = floor(1000/v); % simulation duration [s]
@@ -54,34 +54,19 @@ T_tracking = 0.1; % tracking periodicity for BF vector [s]
 T_mul_users_update = 1; %how often BSs change n of connected users 
 t_H = 0.3; % udpate of channel instances
 n_users = 25; % mean number of users per BS, poisson r.v.
-alloc_func = {@VCG_auction_solver; @non_VCG_auction_solver; @random_allocation};
+alloc_func = { @VCG_auction_solver; @custom_solver; @random_allocation};
 
 DEBUG = n_rep_PL < 2;
 SAVE_DATA_VERBOSE = true;
 
 %% deploy BS
-n_BS_top = poissrnd(BS_per_km/1000 * (road_length),1,1); % number of BSs
-n_BS_bottom = poissrnd(BS_per_km/1000 * (road_length),1,1); % number of BSs   
-% n_BS_top = BS_per_km;
-% n_BS_bottom = BS_per_km;
-BS_distance_avg_top = 1000/n_BS_top;
-BS_distance_avg_bottom = 1000/n_BS_bottom;
-delta_top = ceil(BS_distance_avg_top/8);
-delta_bottom = ceil(BS_distance_avg_bottom/8); 
-
-pos_top = zeros(n_BS_top, 3);
-for i = 1:n_BS_top
-    pos_top(i, :) = [(i-1)*BS_distance_avg_top+unifrnd(-delta_top , delta_top) , 2 * R, 8];            
-end
-
-pos_bottom = zeros(n_BS_bottom, 3);
-for i = 1:n_BS_bottom
-    pos_bottom(i, :) = [(i-1)*BS_distance_avg_bottom+unifrnd(-delta_bottom , delta_bottom) , 0, 8];
-end    
-
-disp(n_BS_bottom + n_BS_top);
+[n_BS_top, n_BS_bottom, pos_top, pos_bottom] = deploy_bs(BS_per_km, road_length, R);
 %%
 
+fprintf('Going to delete all previous results and start a new batch of simulations. PRESS ANY KEY TO CONTINUE.\n')
+if ~DEBUG
+    pause();
+end
 delete('RESULTS//savings*');
 global_start = tic;
 for v = (70:10:130)/3.6 %set of velocities for the ue [m/s]         

@@ -127,16 +127,17 @@ classdef BaseStation < handle
             end
         end
         
-        function mem = get_mem_for_UE(BS)
+        function mem = get_mem_for_UE(BS, BS_per_km)
 %             %at this point the station is offering a certain amount of space for the UE. 
 %             %It need not be the case the BS will actually receive the file
 %             %% see DOC/meanconntime_bias.jpg for reference
 %             mean_conn_time = ( abs(BS.pos(2) - BS.sharedData.UE.pos(2)) * sin(pi/3) / sin(pi/6) ) * 2 / BS.sharedData.UE.vel;
 %             %%
-%             mem = int64( (BS.sharedData.UE.requested_rate + abs( 0.02*randn(1) ) )* mean_conn_time * 1e9 ) ; %[bits]
+            mean_conn_time = (1000/BS_per_km) / BS.sharedData.UE.vel;
+            mem = int64( BS.sharedData.UE.requested_rate * (2*mean_conn_time + 0.5*randn(1)) * 1e9 ) ; %[bits]
             
-            mem = 0.75*BS.sharedData.UE.max_buffer +( 0.01*randn(1) )*1e9;
-            mem = int64(mem);
+%             mem = 0.9*BS.sharedData.UE.max_buffer +( 0.01*randn(1) )*1e9;
+%             mem = int64(mem);
             if mem > BS.memory
                 mem = 0;
             end

@@ -3,7 +3,7 @@ function [X, chunks] = random_allocation(allBS, UE, BS_per_km, DEBUG)
     N = max(size(allBS));
     chunks = zeros(N, 1); %this must be a col vector
     for i = 1:N
-        chunks(i) = allBS{i}.get_mem_for_UE();
+        chunks(i) = allBS{i}.get_mem_for_UE(BS_per_km);
     end
         
     S = (double(chunks)/1e9) * UE.vel / UE.requested_rate; % [meters]
@@ -17,7 +17,7 @@ function [X, chunks] = random_allocation(allBS, UE, BS_per_km, DEBUG)
     SX = 0;
     I = 1:N;
     X = [];
-    while SX < 1000 && ~isempty(I)
+    while SX < 1100 && ~isempty(I)
         i = randi(size(I));
         X = [X; I(i)];
         I(i) = [];
@@ -35,7 +35,7 @@ function [X, chunks] = random_allocation(allBS, UE, BS_per_km, DEBUG)
         hold on;
         for i = 1:N
             plot(allBS{i}.pos(1), allBS{i}.pos(2), '*')
-            l = abs(allBS{i}.pos(2) - allBS{i}.sharedData.UE.pos(2)) * sin(pi/3) / sin(pi/6);
+            l = S(i)/2;
             plot([allBS{i}.pos(1) - l , allBS{i}.pos(1)+S(i)-l], [allBS{i}.pos(2), allBS{i}.pos(2)] - allBS{i}.ID / 10)
             text(allBS{i}.pos(1), allBS{i}.pos(2)+1, strcat('ID: ', int2str(allBS{i}.ID)));
             %text(allBS{i}.pos(1), allBS{i}.pos(2)+2, strcat('w: ', num2str(w(i)))); %weigth of BS
