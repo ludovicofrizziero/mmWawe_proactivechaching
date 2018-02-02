@@ -20,7 +20,7 @@ function [X, chunks] = custom_solver(allBS, UE, BS_per_km, DEBUG)
     SX = S' * X;
     K_old = -1e12;
     K = -1e11;
-    while SX < 1100 && chunks' * X < UE.requested_file_size 
+    while SX < 1100 && chunks' * X < UE.requested_file_size && K > K_old
         best_i = 0;
         best_k = -1e12;
 %         best_d = zeros(N, 1);
@@ -55,8 +55,8 @@ function [X, chunks] = custom_solver(allBS, UE, BS_per_km, DEBUG)
             end       
             
             lambda = 9e2; %tradeoff weight
-%             tmp_k = b' * Y - ( ((Y' * Y) \ d' * Y - 1000/(Y' * Y))^2 + (d2' * Y / 2 - 1000)^2 ) / lambda; ((Y' * Y) \ ((d' * Y)) - 1000/(Y' * Y))^2 + 
-            tmp_k = b' * Y - ( (d2' * Y / 2 - 1000)^2 )/ lambda; %need to divide d'*y by 2 or else count twice the same thing
+%             tmp_k = b' * Y - ( ((Y' * Y) \ d' * Y - 1000/(Y' * Y))^2 + (d2' * Y / 2 - 1000)^2 ) / lambda;
+            tmp_k = b' * Y - ( ((Y' * Y) \ d' * Y - 1000/(Y' * Y))^2 + (d2' * Y / 2 - 1000)^2 )/ lambda;
             if tmp_k > best_k
                 best_k = tmp_k;
                 best_i = i;

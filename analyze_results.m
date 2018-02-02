@@ -54,7 +54,7 @@ for v = vels
         ue_d_lost = [];
         ue_w_time = [];
         bs_mem_left = [];
-        for i = 1:max(size(saves))
+        for i = 1:max(size(saves)) % # of monte carlo iterations per file
             s = saves{i};
             ue_d_lost = [ue_d_lost; sum(s.ue_lost_data(1:end-5))];%the last UE's positions are degenerate due to simulation ending  
             ue_w_time = [ue_w_time; sum(s.ue_waiting_time(1:end-5))];
@@ -66,14 +66,14 @@ for v = vels
         out{idx, func_idx}.mean_lost = mean(ue_d_lost);
         out{idx, func_idx}.mean_time = mean(ue_w_time);
         out{idx, func_idx}.mean_mem = mean(bs_mem_left);  
-        out{idx, func_idx}.ue_buff = saves{1}.ue_buffer;
-        out{idx, func_idx}.ue_max_buff = saves{1}.ue_max_buffer;
+        %out{idx, func_idx}.ue_buff = saves{1}.ue_buffer;
+        %out{idx, func_idx}.ue_max_buff = saves{1}.ue_max_buffer;
     end
 end
 
 %% lost memory
 figure;
-title('lost data');
+title('average lost data');
 hold on
 for i = 1:min(size(out))
     y = [];
@@ -90,7 +90,7 @@ legend('VCG', 'Custom', 'Random');
 
 %% wait time
 figure;
-title('wait time')
+title('average cumulative wait time')
 hold on
 for i = 1:min(size(out))
     y = [];
@@ -107,7 +107,7 @@ legend('VCG', 'Custom', 'Random');
 
 %% leftover mem at bs
 figure;
-title('leftover data at bs')
+title('average leftover data at bs')
 hold on
 for i = 1:min(size(out))
     y = [];
@@ -122,26 +122,67 @@ ylabel('[MBytes]');
 legend('VCG', 'Custom', 'Random');
 %%
 
-figure;
-hold on
-x_max = 0;
-for i = 1:min(size(out))
-    y = out{4, i}.ue_buff; % 4 is the idx for 100 km/h
-    x = (1:max(size(y)))' * 0.1; %assuming dt=0.1 s
-    if x(end) > x_max
-        x_max = x(end);
-    end
-    plot(x, y / 8e9, '-');  
-end
-plot([1, x_max], ones(2,1) * double(out{4, 1}.ue_max_buff) / 8e9);
-hold off
-xlabel('time [s]');
-ylabel('[MBytes]');
-legend('VCG', 'Custom', 'Random', 'buffer limit');
-title(strcat('UE buffer (with consumption rate of 0.068 Gbps )'));
+% figure;
+% hold on
+% x_max = 0;
+% for i = 1:min(size(out))
+%     y = out{4, i}.ue_buff; % 4 is the idx for 100 km/h
+%     x = (1:max(size(y)))' * 0.1; %assuming dt=0.1 s
+%     if x(end) > x_max
+%         x_max = x(end);
+%     end
+%     plot(x, y / 8e9, '-');  
+% end
+% plot([1, x_max], ones(2,1) * double(out{4, 1}.ue_max_buff) / 8e9);
+% hold off
+% xlabel('time [s]');
+% ylabel('[MBytes]');
+% legend('VCG', 'Custom', 'Random', 'buffer limit');
+% title(strcat('UE buffer (with consumption rate of 0.068 Gbps )'));
 
 
 %% QoS, WARNING: THIS IS ONLY A SKETCH IDEA
+
+%QoS: evaluate average UE buffer usage (ideal should be around 50-75% ???)
+out_buff = cell(1,1);
+for v = vels
+    name = strcat('RESULTS//savings_v', num2str(v), '*');
+    all_files = dir(name);
+    for func_idx = 1:max(size(all_files))      
+        saves = load(strcat('RESULTS//', all_files(func_idx).name));
+        saves = saves.savings; %due to load() strangeness
+        ue_buff = [];
+        for i = 1:max(size(saves)) % # of monte carlo iterations per file
+            s = saves{i};
+            ue_buff = [ue_buff; mean(s.ue_buffer(15:end-15))];%some UE's positions are degenerate due to simulation starting/ending              
+        end
+        
+        idx = (v-70)/10 + 1;
+        out_buff{idx, func_idx} = struct;
+        out_buff{idx, func_idx}.mean = mean(ue_buff);
+    end
+end
+
+figure;
+title('UE buffer average load (with consumption rate 0.068 Gbit/s)')
+hold on
+max_buff = double(s.ue_max_buffer);
+for i = 1:min(size(out))
+    y = [];
+    for j = 1:max(size(out))
+        y = [y; out_buff{j, i}.mean];
+    end
+    plot(vels, y / max_buff, '-*');
+end
+plot([vels(1), vels(end)], ones(2,1) * 0.75);
+plot(vels(1),1)
+hold off
+xlabel('velocity [Km/h]');
+ylabel('Buffer load [%]');
+legend('VCG', 'Custom', 'Random', 'Ideal load');
+
+
+
 figure;
 title('QoS averaged for all velocities ');
 a = 0:0.01:1;
@@ -151,10 +192,10 @@ for func = 1:3
     for vel = 1:max(size(out))
         lost = out{vel,func}.mean_lost / 0.068 + out{vel, func}.mean_mem / 0.068;
         wait = out{vel,func}.mean_time;
-        tmp = 1./(a * wait + (1-a) *  lost);
+        tmp = 1./((a * wait + (1-a) *  lost) + 1 );
         y = [y; tmp];
     end
-    plot(a, log10(mean(y, 1)));    
+    plot(a, mean(y, 1));    
     hold off;
 end
 xlabel('mixture parameter \alpha');

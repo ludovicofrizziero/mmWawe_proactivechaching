@@ -134,7 +134,7 @@ classdef BaseStation < handle
 %             mean_conn_time = ( abs(BS.pos(2) - BS.sharedData.UE.pos(2)) * sin(pi/3) / sin(pi/6) ) * 2 / BS.sharedData.UE.vel;
 %             %%
             mean_conn_time = (1000/BS_per_km) / BS.sharedData.UE.vel;
-            mem = int64( BS.sharedData.UE.requested_rate * (2*mean_conn_time + 0.5*randn(1)) * 1e9 ) ; %[bits]
+            mem = int64( BS.sharedData.UE.requested_rate * (2*mean_conn_time + 0.0*randn(1)) * 1e9 ) ; %[bits]
             
 %             mem = 0.9*BS.sharedData.UE.max_buffer +( 0.01*randn(1) )*1e9;
 %             mem = int64(mem);
@@ -187,7 +187,7 @@ classdef BaseStation < handle
                 BS.AoD = [-theta, phi];
             elseif theta >= pi/2 && s > 0
                 BS.AoD = [theta, phi];
-            elseif theta >= pi/2 && s < 0
+            elseif theta > pi/2 && s < 0
                 BS.AoD = [-theta, phi];
             end                      
         end               

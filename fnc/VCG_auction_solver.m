@@ -51,6 +51,7 @@ function [X, chunks] = VCG_auction_solver(allBS, UE, BS_per_km, DEBUG)
         S = (double(chunks)/1e9) * UE.vel / UE.requested_rate;
         figure;
         hold on;
+        grid on;
         for i = 1:N
             plot(allBS{i}.pos(1), allBS{i}.pos(2), '*')
             l = S(i)/2;
@@ -62,7 +63,7 @@ function [X, chunks] = VCG_auction_solver(allBS, UE, BS_per_km, DEBUG)
             end
         end
         hold off;
-        
+        grid off;
         fprintf('SX: %f\n', S' * X);
     end
     %%

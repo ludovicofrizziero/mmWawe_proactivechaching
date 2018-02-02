@@ -54,7 +54,7 @@ for v = vels
         ue_d_lost = [];
         ue_w_time = [];
         bs_mem_left = [];
-        for i = 1:max(size(saves))
+        for i = 1:max(size(saves)) % # of monte carlo iterations per file
             s = saves{i};
             ue_d_lost = [ue_d_lost; sum(s.ue_lost_data(1:end-5))];%the last UE's positions are degenerate due to simulation ending  
             ue_w_time = [ue_w_time; sum(s.ue_waiting_time(1:end-5))];
@@ -66,8 +66,8 @@ for v = vels
         out{idx, func_idx}.mean_lost = mean(ue_d_lost);
         out{idx, func_idx}.mean_time = mean(ue_w_time);
         out{idx, func_idx}.mean_mem = mean(bs_mem_left);  
-        out{idx, func_idx}.ue_buff = saves{1}.ue_buffer;
-        out{idx, func_idx}.ue_max_buff = saves{1}.ue_max_buffer;
+        %out{idx, func_idx}.ue_buff = saves{1}.ue_buffer;
+        %out{idx, func_idx}.ue_max_buff = saves{1}.ue_max_buffer;
     end
 end
 
@@ -122,29 +122,29 @@ ylabel('[MBytes]');
 legend('VCG', 'Custom', 'Random');
 %%
 
-figure;
-hold on
-x_max = 0;
-for i = 1:min(size(out))
-    y = out{4, i}.ue_buff; % 4 is the idx for 100 km/h
-    x = (1:max(size(y)))' * 0.1; %assuming dt=0.1 s
-    if x(end) > x_max
-        x_max = x(end);
-    end
-    plot(x, y / 8e9, '-');  
-end
-plot([1, x_max], ones(2,1) * double(out{4, 1}.ue_max_buff) / 8e9);
-hold off
-xlabel('time [s]');
-ylabel('[MBytes]');
-legend('VCG', 'Custom', 'Random', 'buffer limit');
-title(strcat('UE buffer (with consumption rate of 0.068 Gbps )'));
+% figure;
+% hold on
+% x_max = 0;
+% for i = 1:min(size(out))
+%     y = out{4, i}.ue_buff; % 4 is the idx for 100 km/h
+%     x = (1:max(size(y)))' * 0.1; %assuming dt=0.1 s
+%     if x(end) > x_max
+%         x_max = x(end);
+%     end
+%     plot(x, y / 8e9, '-');  
+% end
+% plot([1, x_max], ones(2,1) * double(out{4, 1}.ue_max_buff) / 8e9);
+% hold off
+% xlabel('time [s]');
+% ylabel('[MBytes]');
+% legend('VCG', 'Custom', 'Random', 'buffer limit');
+% title(strcat('UE buffer (with consumption rate of 0.068 Gbps )'));
 
 
 %% QoS, WARNING: THIS IS ONLY A SKETCH IDEA
 figure;
 title('QoS averaged for all velocities ');
-a = 0.01:0.01:1;
+a = 0:0.01:1;
 for func = 1:3        
     hold on;
     y = [];
@@ -160,6 +160,45 @@ end
 xlabel('mixture parameter \alpha');
 ylabel('QoS');
 legend('VCG', 'Custom', 'Random');
+
+
+%QoS: evaluate average UE buffer usage (ideal should be around 50-75% ???)
+out_buff = cell(1,1);
+for v = vels
+    name = strcat('RESULTS//savings_v', num2str(v), '*');
+    all_files = dir(name);
+    for func_idx = 1:max(size(all_files))      
+        saves = load(strcat('RESULTS//', all_files(func_idx).name));
+        saves = saves.savings; %due to load() strangeness
+        ue_buff = [];
+        for i = 1:max(size(saves)) % # of monte carlo iterations per file
+            s = saves{i};
+            ue_buff = [ue_buff; mean(s.ue_buffer(15:end-15))];%some UE's positions are degenerate due to simulation starting/ending              
+        end
+        
+        idx = (v-70)/10 + 1;
+        out_buff{idx, func_idx} = struct;
+        out_buff{idx, func_idx}.mean = mean(ue_buff);
+    end
+end
+
+figure;
+title('UE buffer average load (with consumption rate 0.068 Gbit/s)')
+hold on
+max_buff = double(s.ue_max_buffer);
+for i = 1:min(size(out))
+    y = [];
+    for j = 1:max(size(out))
+        y = [y; out_buff{j, i}.mean];
+    end
+    plot(vels, y / max_buff, '-*');
+end
+plot([1, x_max], ones(2,1) * double(out{4, 1}.ue_max_buff) / 8e9);
+hold off
+xlabel('velocity [Km/h]');
+ylabel('Buffer load [%]');
+legend('VCG', 'Custom', 'Random', 'Ideal load');
+
 %%
 
 %% QoS

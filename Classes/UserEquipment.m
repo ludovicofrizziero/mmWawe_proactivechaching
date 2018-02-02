@@ -128,11 +128,11 @@ classdef UserEquipment < handle
             %find azimut angle (with respect to y axis, positive toward x axis)            
             if theta <= pi/2 && s > 0 
                 UE.AoA = [theta, phi];
-            elseif theta < pi/2 && s < 0
+            elseif theta <= pi/2 && s < 0
                 UE.AoA = [-theta, phi];
             elseif theta >= pi/2 && s > 0
                 UE.AoA = [theta, phi];
-            elseif theta > pi/2 && s < 0
+            elseif theta >= pi/2 && s < 0
                 UE.AoA = [-theta, phi];
             end           
         end

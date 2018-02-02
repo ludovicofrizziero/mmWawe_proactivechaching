@@ -104,6 +104,7 @@ function [X, chunks] = non_VCG_auction_solver2(allBS, UE, BS_per_km, DEBUG)
     if DEBUG
         figure;
         hold on;
+        grid on;
         for i = 1:N
             plot(allBS{i}.pos(1), allBS{i}.pos(2), '*')
             %l = abs(allBS{i}.pos(2) - allBS{i}.sharedData.UE.pos(2)) * sin(pi/3) / sin(pi/6);
@@ -116,6 +117,7 @@ function [X, chunks] = non_VCG_auction_solver2(allBS, UE, BS_per_km, DEBUG)
             end
         end
         hold off;
+        grid off;
         
         fprintf('SX: %f\n', S' * X);
     end
