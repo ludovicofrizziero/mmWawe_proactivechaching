@@ -28,18 +28,18 @@ function [X, chunks] = custom_solver(allBS, UE, BS_per_km, DEBUG)
             Y = X;
             Y(i) = 1;
             
-            d = zeros(N, 1);
-            for j = (find(Y))' %find(..) finds all nonzeros elements' indexies
-                j_x = allBS{j}.pos(1);
-                for t = 1:N
-                    if t~=j
-                        t_x = allBS{t}.pos(1);
-                        if d(j) > abs(t_x - j_x) || d(j) == 0
-                            d(j) = abs(t_x - j_x);
-                        end
-                    end
-                end
-            end       
+%             d = zeros(N, 1);
+%             for j = (find(Y))' %find(..) finds all nonzeros elements' indexies
+%                 j_x = allBS{j}.pos(1);
+%                 for t = 1:N
+%                     if t~=j
+%                         t_x = allBS{t}.pos(1);
+%                         if d(j) > abs(t_x - j_x) || d(j) == 0
+%                             d(j) = abs(t_x - j_x);
+%                         end
+%                     end
+%                 end
+%             end       
             
             d2 = zeros(N, 1);
             for j = (find(Y))' %find(..) finds all nonzeros elements' indexies
@@ -54,7 +54,7 @@ function [X, chunks] = custom_solver(allBS, UE, BS_per_km, DEBUG)
                 end
             end       
             
-            lambda = 9e2; %tradeoff weight
+            lambda = 5e2; %tradeoff weight
 %             tmp_k = b' * Y - ( ((Y' * Y) \ d' * Y - 1000/(Y' * Y))^2 + (d2' * Y / 2 - 1000)^2 ) / lambda; ((Y' * Y) \ ((d' * Y)) - 1000/(Y' * Y))^2 + 
             tmp_k = b' * Y - ( (d2' * Y / 2 - 1000)^2 )/ lambda; %need to divide d'*y by 2 or else count twice the same thing
             if tmp_k > best_k
@@ -68,10 +68,16 @@ function [X, chunks] = custom_solver(allBS, UE, BS_per_km, DEBUG)
             fprintf('%d ', allBS{best_i}.ID);
         end
             
-        X(best_i) = 1;
-        K_old = K;
-        K = best_k;
-        SX = S' * X;
+        if (best_i ~= 0)
+            X(best_i) = 1;
+            K_old = K;
+            K = best_k;
+            SX = S' * X;
+        else
+            %disp('problem -> maximum reached before constraints were respected.')
+            CE = ConstraintsViolatedException('Maximum reached before constraints were respected');
+            throw(CE);  
+        end
     end
 
     

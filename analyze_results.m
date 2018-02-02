@@ -84,7 +84,7 @@ for i = 1:min(size(out))
 end
 hold off
 xlabel('velocity [Km/h]');
-ylabel('[MBytes]');
+ylabel('[GBytes]');
 legend('VCG', 'Custom', 'Random');
 %%
 
@@ -118,7 +118,7 @@ for i = 1:min(size(out))
 end
 hold off
 xlabel('velocity [Km/h]');
-ylabel('[MBytes]');
+ylabel('[GBytes]');
 legend('VCG', 'Custom', 'Random');
 %%
 
@@ -166,6 +166,7 @@ end
 figure;
 title('UE buffer average load (with consumption rate 0.068 Gbit/s)')
 hold on
+grid on
 max_buff = double(s.ue_max_buffer);
 for i = 1:min(size(out))
     y = [];
@@ -174,12 +175,13 @@ for i = 1:min(size(out))
     end
     plot(vels, y / max_buff, '-*');
 end
-plot([vels(1), vels(end)], ones(2,1) * 0.75);
-plot(vels(1),1)
+plot([vels(1), vels(end)], ones(2,1) * 0.5, '--');
+plot([vels(1), vels(end)], ones(2,1))
 hold off
+grid off
 xlabel('velocity [Km/h]');
 ylabel('Buffer load [%]');
-legend('VCG', 'Custom', 'Random', 'Ideal load');
+legend('VCG', 'Custom', 'Random', 'Ideal load', 'Max buffer');
 
 
 
@@ -192,13 +194,13 @@ for func = 1:3
     for vel = 1:max(size(out))
         lost = out{vel,func}.mean_lost / 0.068 + out{vel, func}.mean_mem / 0.068;
         wait = out{vel,func}.mean_time;
-        tmp = 1./((a * wait + (1-a) *  lost) + 1 );
+        tmp = (0.75*wait + 0.25*lost) / (sum(s.BSs_mem_state)/ 0.068);
         y = [y; tmp];
     end
-    plot(a, mean(y, 1));    
+    plot(vels, 1 - y);    
     hold off;
 end
-xlabel('mixture parameter \alpha');
+xlabel('Velocity [Km/h]');
 ylabel('QoS');
 legend('VCG', 'Custom', 'Random');
 %%

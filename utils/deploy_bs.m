@@ -7,6 +7,9 @@ function [n_BS_top, n_BS_bottom, pos_top, pos_bottom] = deploy_bs(BS_per_km, roa
     BS_distance_avg_bottom = 1000/n_BS_bottom;
     delta_top = ceil(BS_distance_avg_top/8);
     delta_bottom = ceil(BS_distance_avg_bottom/8); 
+%     delta_top = 500;
+%     delta_bottom = 500; 
+
 
     pos_top = zeros(n_BS_top, 3);
     for i = 1:n_BS_top

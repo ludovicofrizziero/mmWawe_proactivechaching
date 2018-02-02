@@ -45,7 +45,7 @@ R = d_R + N_0*W_L; % road width
 BS_per_km = 10;
 
 %% parameters for simulation
-n_rep_PL = 1; % number of repetition per choice of parameters
+n_rep_PL = 100; % number of repetition per choice of parameters
 theta_out = -5; %SINR outage threshold [dB]
 outage_thresh = 10^(theta_out/10); %SINR outage threshold
 % T_sim = floor(1000/v); % simulation duration [s]
@@ -60,7 +60,7 @@ DEBUG = n_rep_PL < 2;
 SAVE_DATA_VERBOSE = true;
 
 %% deploy BS
-[n_BS_top, n_BS_bottom, pos_top, pos_bottom] = deploy_bs(BS_per_km, road_length, R);
+% [n_BS_top, n_BS_bottom, pos_top, pos_bottom] = deploy_bs(BS_per_km, road_length, R);
 %%
 
 fprintf('Going to delete all previous results and start a new batch of simulations. PRESS ANY KEY TO CONTINUE.\n')
@@ -80,7 +80,7 @@ for v = (70:10:130)/3.6 %set of velocities for the ue [m/s]
             rate_tmp = cell(n_rep_PL, 1);        
             savings = cell(n_rep_PL, 1);
             tic; 
-            for iter = 1:n_rep_PL  
+            parfor iter = 1:n_rep_PL  
 
                 fprintf('\titeration: %d\n', iter);      
 
@@ -90,26 +90,36 @@ for v = (70:10:130)/3.6 %set of velocities for the ue [m/s]
                 shared_data.UE = UE;
                 UE.sharedData = shared_data;    
 
-%                 [n_BS_top, n_BS_bottom, pos_top, pos_bottom] = deploy_bs(BS_per_km, road_length, R);
-                
-                allBS = cell(n_BS_top + n_BS_bottom, 1);
-                for i = 1:n_BS_top                
-                    allBS{i} = BaseStation(2*i, n_tx, f, BW, pos_top(i, :), t_H, T_tracking, n_users); 
+                ok = false;
+                while ~ok
+                    try
+                        [n_BS_top, n_BS_bottom, pos_top, pos_bottom] = deploy_bs(BS_per_km, road_length, R);
+
+                        allBS = cell(n_BS_top + n_BS_bottom, 1);
+                        for i = 1:n_BS_top                
+                            allBS{i} = BaseStation(2*i, n_tx, f, BW, pos_top(i, :), t_H, T_tracking, n_users); 
+                        end
+
+                        for i = 1:n_BS_bottom
+                            allBS{i + n_BS_top} = BaseStation(2*i-1, n_tx, f, BW, pos_bottom(i, :), t_H, T_tracking, n_users); 
+                        end    
+
+                        shared_data.servingBS = allBS{1}; %just for initialization
+                        UE.init();
+                        for i = 1:length(allBS)
+                                allBS{i}.init();
+                        end
+
+                        %% allocate file to BS WARNING: CAN THROW EXCEPTION    
+                        [X, chunks] = alloc_func{alloc_func_idx}(allBS, UE, max(n_BS_bottom, n_BS_top), DEBUG);
+                        %%  
+                    catch ConstraintsViolatedException
+                        disp( 'retrying' );
+                        break;
+                    end
+                    
+                    ok = true;
                 end
-
-                for i = 1:n_BS_bottom
-                    allBS{i + n_BS_top} = BaseStation(2*i-1, n_tx, f, BW, pos_bottom(i, :), t_H, T_tracking, n_users); 
-                end    
-
-                shared_data.servingBS = allBS{1}; %just for initialization
-                UE.init();
-                for i = 1:length(allBS)
-                        allBS{i}.init();
-                end
-
-                %% allocate file to BS
-                %[X, chunks] = non_VCG_auction_solver(allBS, UE, max(n_BS_bottom, n_BS_top), DEBUG);
-                [X, chunks] = alloc_func{alloc_func_idx}(allBS, UE, max(n_BS_bottom, n_BS_top), DEBUG);
 
                 for i = 1:size(X)
                     allBS{i}.allocate_memory_for_ue(chunks(i) * X(i));
@@ -118,7 +128,7 @@ for v = (70:10:130)/3.6 %set of velocities for the ue [m/s]
                 if DEBUG
                     disp(int8(X'));
                 end
-                %%                          
+                                        
 
                 %% start simulation
                 index_internal = 1;

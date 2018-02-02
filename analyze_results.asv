@@ -73,7 +73,7 @@ end
 
 %% lost memory
 figure;
-title('lost data');
+title('average lost data');
 hold on
 for i = 1:min(size(out))
     y = [];
@@ -84,13 +84,13 @@ for i = 1:min(size(out))
 end
 hold off
 xlabel('velocity [Km/h]');
-ylabel('[MBytes]');
+ylabel('[GBytes]');
 legend('VCG', 'Custom', 'Random');
 %%
 
 %% wait time
 figure;
-title('wait time')
+title('average cumulative wait time')
 hold on
 for i = 1:min(size(out))
     y = [];
@@ -107,7 +107,7 @@ legend('VCG', 'Custom', 'Random');
 
 %% leftover mem at bs
 figure;
-title('leftover data at bs')
+title('average leftover data at bs')
 hold on
 for i = 1:min(size(out))
     y = [];
@@ -118,7 +118,7 @@ for i = 1:min(size(out))
 end
 hold off
 xlabel('velocity [Km/h]');
-ylabel('[MBytes]');
+ylabel('[GBytes]');
 legend('VCG', 'Custom', 'Random');
 %%
 
@@ -142,25 +142,6 @@ legend('VCG', 'Custom', 'Random');
 
 
 %% QoS, WARNING: THIS IS ONLY A SKETCH IDEA
-figure;
-title('QoS averaged for all velocities ');
-a = 0:0.01:1;
-for func = 1:3        
-    hold on;
-    y = [];
-    for vel = 1:max(size(out))
-        lost = out{vel,func}.mean_lost / 0.068 + out{vel, func}.mean_mem / 0.068;
-        wait = out{vel,func}.mean_time;
-        tmp = 1./(a * wait + (1-a) *  lost);
-        y = [y; tmp];
-    end
-    plot(a, log10(mean(y, 1)));    
-    hold off;
-end
-xlabel('mixture parameter \alpha');
-ylabel('QoS');
-legend('VCG', 'Custom', 'Random');
-
 
 %QoS: evaluate average UE buffer usage (ideal should be around 50-75% ???)
 out_buff = cell(1,1);
@@ -185,6 +166,7 @@ end
 figure;
 title('UE buffer average load (with consumption rate 0.068 Gbit/s)')
 hold on
+grid on
 max_buff = double(s.ue_max_buffer);
 for i = 1:min(size(out))
     y = [];
@@ -193,12 +175,34 @@ for i = 1:min(size(out))
     end
     plot(vels, y / max_buff, '-*');
 end
-plot([1, x_max], ones(2,1) * double(out{4, 1}.ue_max_buff) / 8e9);
+plot([vels(1), vels(end)], ones(2,1) * 0.5, '--');
+plot([vels(1), vels(end)], ones(2,1))
 hold off
+grid off
 xlabel('velocity [Km/h]');
 ylabel('Buffer load [%]');
-legend('VCG', 'Custom', 'Random', 'Ideal load');
+legend('VCG', 'Custom', 'Random', 'Ideal load', 'Max buffer');
 
+
+
+figure;
+title('QoS averaged for all velocities ');
+a = 0:0.01:1;
+for func = 1:3        
+    hold on;
+    y = [];
+    for vel = 1:max(size(out))
+        lost = out{vel,func}.mean_lost / 0.068 + out{vel, func}.mean_mem / 0.068;
+        wait = out{vel,func}.mean_time;
+        tmp = (wait + lost) / (sum(s.BSs_mem_state)/ 0.068);
+        y = [y; tmp];
+    end
+    plot(vels, 1 - y);    
+    hold off;
+end
+xlabel('mixture parameter \alpha');
+ylabel('QoS');
+legend('VCG', 'Custom', 'Random');
 %%
 
 %% QoS
