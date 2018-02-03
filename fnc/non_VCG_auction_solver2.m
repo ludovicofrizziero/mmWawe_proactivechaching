@@ -1,5 +1,5 @@
-function [X, chunks] = non_VCG_auction_solver2(allBS, UE, BS_per_km, DEBUG)
-
+function [X, chunks, ok] = non_VCG_auction_solver2(allBS, UE, BS_per_km, DEBUG)
+    ok = true; %simple error signaling
     N = max(size(allBS));
     chunks = zeros(N, 1); %this must be a col vector
     for i = 1:N

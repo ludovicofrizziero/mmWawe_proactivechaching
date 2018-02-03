@@ -1,4 +1,5 @@
-function [X, chunks] = custom_solver(allBS, UE, BS_per_km, DEBUG)    
+function [X, chunks, ok] = custom_solver(allBS, UE, BS_per_km, DEBUG)    
+    ok = true; %simple error signaling
     N = max(size(allBS));
     chunks = zeros(N, 1); %this must be a col vector
     for i = 1:N
@@ -75,8 +76,8 @@ function [X, chunks] = custom_solver(allBS, UE, BS_per_km, DEBUG)
             SX = S' * X;
         else
             %disp('problem -> maximum reached before constraints were respected.')
-            CE = ConstraintsViolatedException('Maximum reached before constraints were respected');
-            throw(CE);  
+            ok = false;
+            break;
         end
     end
 

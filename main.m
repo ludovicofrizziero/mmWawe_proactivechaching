@@ -60,7 +60,7 @@ DEBUG = n_rep_PL < 2;
 SAVE_DATA_VERBOSE = true;
 
 %% deploy BS
-% [n_BS_top, n_BS_bottom, pos_top, pos_bottom] = deploy_bs(BS_per_km, road_length, R);
+[n_BS_top, n_BS_bottom, pos_top, pos_bottom] = deploy_bs(BS_per_km, road_length, R);
 %%
 
 fprintf('Going to delete all previous results and start a new batch of simulations. PRESS ANY KEY TO CONTINUE.\n')
@@ -91,34 +91,30 @@ for v = (70:10:130)/3.6 %set of velocities for the ue [m/s]
                 UE.sharedData = shared_data;    
 
                 ok = false;
+                allBS = [];
+                X = [];
+                chunks = [];
                 while ~ok
-                    try
-                        [n_BS_top, n_BS_bottom, pos_top, pos_bottom] = deploy_bs(BS_per_km, road_length, R);
+%                     [n_BS_top, n_BS_bottom, pos_top, pos_bottom] = deploy_bs(BS_per_km, road_length, R);
 
-                        allBS = cell(n_BS_top + n_BS_bottom, 1);
-                        for i = 1:n_BS_top                
-                            allBS{i} = BaseStation(2*i, n_tx, f, BW, pos_top(i, :), t_H, T_tracking, n_users); 
-                        end
-
-                        for i = 1:n_BS_bottom
-                            allBS{i + n_BS_top} = BaseStation(2*i-1, n_tx, f, BW, pos_bottom(i, :), t_H, T_tracking, n_users); 
-                        end    
-
-                        shared_data.servingBS = allBS{1}; %just for initialization
-                        UE.init();
-                        for i = 1:length(allBS)
-                                allBS{i}.init();
-                        end
-
-                        %% allocate file to BS WARNING: CAN THROW EXCEPTION    
-                        [X, chunks] = alloc_func{alloc_func_idx}(allBS, UE, max(n_BS_bottom, n_BS_top), DEBUG);
-                        %%  
-                    catch ConstraintsViolatedException
-                        disp( 'retrying' );
-                        break;
+                    allBS = cell(n_BS_top + n_BS_bottom, 1);
+                    for i = 1:n_BS_top                
+                        allBS{i} = BaseStation(2*i, n_tx, f, BW, pos_top(i, :), t_H, T_tracking, n_users); 
                     end
-                    
-                    ok = true;
+
+                    for i = 1:n_BS_bottom
+                        allBS{i + n_BS_top} = BaseStation(2*i-1, n_tx, f, BW, pos_bottom(i, :), t_H, T_tracking, n_users); 
+                    end    
+
+                    shared_data.servingBS = allBS{1}; %just for initialization
+                    UE.init();
+                    for i = 1:length(allBS)
+                            allBS{i}.init();
+                    end
+
+                    %% allocate file to BS
+                    [X, chunks, ok] = alloc_func{alloc_func_idx}(allBS, UE, max(n_BS_bottom, n_BS_top), DEBUG);
+                    %%                                         
                 end
 
                 for i = 1:size(X)
@@ -196,7 +192,7 @@ for v = (70:10:130)/3.6 %set of velocities for the ue [m/s]
                     s.BSs_mem_state = BSs_mem_state;
                     s.all_ids = all_ids;
                     s.X = X;
-                    s.chunks = chunks;        
+                    s.chunks = chunks .* X;        
 
                     savings{iter} = s;
                 end

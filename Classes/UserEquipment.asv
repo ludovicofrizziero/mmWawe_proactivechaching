@@ -24,7 +24,6 @@ classdef UserEquipment < handle
         BF %Beam Forming object
         vel
         m_vel
-        acc
         curr_vel
         AoD
         AoA
@@ -39,8 +38,7 @@ classdef UserEquipment < handle
             UE.ant_arr = antenna_array;
             UE.pos = position;
             UE.vel = vel;
-            UE.m_vel = vel;  
-            UE.acc = 0;
+            UE.m_vel = vel;
             UE.tt = t_tracking;   
             UE.lambda = physconst('lightspeed') / f;            
             d = 0.01; %m
@@ -78,30 +76,24 @@ classdef UserEquipment < handle
             
             UE.hist_index = int32(sim_time/dt); % #iteration we're at
             
-            if mod(sim_time, 1.0) < 1e-9
-                a = randn(1) * 10;
-                if a < -10
-                    a = -10;
-                elseif a > 10
-                    a = 10;
-                end
-
-                UE.acc = a;
+            a = randn(1) * 10;
+            if a < -10
+                a = -10;
+            elseif a > 10
+                a = 10;
             end
             
-            UE.vel = UE.vel + UE.acc * dt;
+            UE.vel = UE.vel + a * dt;
             
-            if UE.vel < 0.9 * UE.m_vel
-                UE.acc = 0;
+            if UE.vel < 0.9 * UE_m_vel
+                a = 0;
                 UE.vel = UE.m_vel * 0.9;
-            elseif UE.vel > 1.1 * UE.m_vel
-                UE.acc = 0;
+            elseif UE.vel < 1.1 * UE_m_vel
+                a = 0;
                 UE.vel = UE.m_vel * 1.1;
             end
             
-            %[UE.vel*3.6, UE.pos, UE.acc]
-            
-            UE.pos(1) = 0.5 * UE.acc * dt^2 + dt * UE.vel + UE.pos(1); 
+            UE.pos(1) = 0.5 * a * dt^2 + dt * UE.vel + UE.pos(1); 
             
             if mod(sim_time, UE.tt) < 1e-10
                 %update Beam Forming vector
