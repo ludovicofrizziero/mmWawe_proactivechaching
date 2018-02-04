@@ -73,7 +73,7 @@ function [X, chunks, ok] = VCG_auction_solver(allBS, UE, BS_per_km, DEBUG)
     N = max(size(allBS));
     chunks = zeros(N, 1); %this must be a col vector
     for i = 1:N
-        chunks(i) = int64(rand(1) * UE.max_buffer); %allBS{i}.get_mem_for_UE(BS_per_km);
+        chunks(i) = int64(UE.max_buffer /4 + rand(1) * UE.max_buffer/2); %allBS{i}.get_mem_for_UE(BS_per_km);
         if chunks(i) > UE.max_buffer
             chunks(i) = 0;
         end
@@ -81,13 +81,13 @@ function [X, chunks, ok] = VCG_auction_solver(allBS, UE, BS_per_km, DEBUG)
     
     S = (double(chunks)/1e9) * UE.vel / UE.requested_rate; % [meters]
     
-    c = 1000/BS_per_km; 
+%     c = 1000/BS_per_km; 
     b = double(chunks)/1e9;
     X = zeros(N,1);
     SX = S' * X;
-    K_old = -1e12;
-    K = -1e11;
-    while SX < 1100 && chunks' * X < UE.requested_file_size 
+%     K_old = -1e12;
+%     K = -1e11;
+    while SX < 1050 && chunks' * X < UE.requested_file_size 
         best_i = 0;
         best_k = -1e12;
 
@@ -95,26 +95,24 @@ function [X, chunks, ok] = VCG_auction_solver(allBS, UE, BS_per_km, DEBUG)
             Y = X;
             Y(i) = 1;
                         
-            d2 = zeros(N, 1);
+            d = zeros(N, 1);
             for j = (find(Y))' %find(..) finds all nonzeros elements' indexies
                 j_x = allBS{j}.pos(1);
                 for t = (find(Y))'
                     if t~=j
                         t_x = allBS{t}.pos(1);
-                        if d2(j) >= abs(t_x - j_x) || d2(j) == 0
-                            d2(j) = abs(t_x - j_x);
+                        if d(j) >= abs(t_x - j_x) || d(j) == 0
+                            d(j) = abs(t_x - j_x);
                         end
                     end
                 end
             end       
             
-            lambda = 5e4; %tradeoff weight
-%             tmp_k = b' * Y - ( ((Y' * Y) \ d' * Y - 1000/(Y' * Y))^2 + (d2' * Y / 2 - 1000)^2 ) / lambda; ((Y' * Y) \ ((d' * Y)) - 1000/(Y' * Y))^2 + 
-            tmp_k = b' * Y - ( (d2' * Y / 2 - 1000)^2 )/ lambda; %need to divide d'*y by 2 or else count twice the same thing
+            lambda = 5e2; %tradeoff weight
+            tmp_k = b' * Y - ( (d' * Y / 2 - 1000)^2 )/ lambda; %need to divide d'*y by 2 or else count twice the same thing
             if tmp_k > best_k
                 best_k = tmp_k;
                 best_i = i;
-%                 best_d = d;
             end
         end
         
@@ -124,8 +122,8 @@ function [X, chunks, ok] = VCG_auction_solver(allBS, UE, BS_per_km, DEBUG)
             
         if (best_i ~= 0)
             X(best_i) = 1;
-            K_old = K;
-            K = best_k;
+%             K_old = K;
+%             K = best_k;
             SX = S' * X;
         else
             %disp('problem -> maximum reached before constraints were respected.')

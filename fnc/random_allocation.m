@@ -3,7 +3,7 @@ function [X, chunks, ok] = random_allocation(allBS, UE, BS_per_km, DEBUG)
     N = max(size(allBS));
     chunks = zeros(N, 1); %this must be a col vector
     for i = 1:N
-        chunks(i) = int64(rand(1) * UE.max_buffer); %allBS{i}.get_mem_for_UE(BS_per_km);
+        chunks(i) = allBS{i}.get_mem_for_UE(BS_per_km); % int64(UE.max_buffer /4 + rand(1) * UE.max_buffer/2); % 
     end
         
     S = (double(chunks)/1e9) * UE.vel / UE.requested_rate; % [meters]
@@ -17,7 +17,7 @@ function [X, chunks, ok] = random_allocation(allBS, UE, BS_per_km, DEBUG)
     SX = 0;
     I = 1:N;
     X = [];
-    while SX < 1100 && ~isempty(I)
+    while SX < 1050 && ~isempty(I)
         i = randi(size(I));
         X = [X; I(i)];
         I(i) = [];

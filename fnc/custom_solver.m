@@ -10,46 +10,29 @@ function [X, chunks, ok] = custom_solver(allBS, UE, BS_per_km, DEBUG)
     end
     
     S = (double(chunks)/1e9) * UE.vel / UE.requested_rate; % [meters]
-%     w = 1/N * (S - mean(S))*(S - mean(S))'; % cov matrix    
-%     w = diag(w);
-%     w = max(1e-9, w);
-%     w = 1/w;
     
-    c = 1000/BS_per_km; 
+%     c = 1000/BS_per_km; 
     b = double(chunks)/1e9;
     X = zeros(N,1);
     SX = S' * X;
-    K_old = -1e12;
-    K = -1e11;
-    while SX < 1100 && chunks' * X < UE.requested_file_size 
+%     K_old = -1e12;
+%     K = -1e11;
+    while SX < 1050 && chunks' * X < UE.requested_file_size 
         best_i = 0;
         best_k = -1e12;
 %         best_d = zeros(N, 1);
         for i = setdiff(1:N, find(X))
             Y = X;
-            Y(i) = 1;
+            Y(i) = 1;              
             
-%             d = zeros(N, 1);
-%             for j = (find(Y))' %find(..) finds all nonzeros elements' indexies
-%                 j_x = allBS{j}.pos(1);
-%                 for t = 1:N
-%                     if t~=j
-%                         t_x = allBS{t}.pos(1);
-%                         if d(j) > abs(t_x - j_x) || d(j) == 0
-%                             d(j) = abs(t_x - j_x);
-%                         end
-%                     end
-%                 end
-%             end       
-            
-            d2 = zeros(N, 1);
+            d = zeros(N, 1);
             for j = (find(Y))' %find(..) finds all nonzeros elements' indexies
                 j_x = allBS{j}.pos(1);
                 for t = (find(Y))'
                     if t~=j
                         t_x = allBS{t}.pos(1);
-                        if d2(j) >= abs(t_x - j_x) || d2(j) == 0
-                            d2(j) = abs(t_x - j_x);
+                        if d(j) >= abs(t_x - j_x) || d(j) == 0
+                            d(j) = abs(t_x - j_x);
                         end
                     end
                 end
@@ -57,7 +40,7 @@ function [X, chunks, ok] = custom_solver(allBS, UE, BS_per_km, DEBUG)
             
             lambda = 5e2; %tradeoff weight
 %             tmp_k = b' * Y - ( ((Y' * Y) \ d' * Y - 1000/(Y' * Y))^2 + (d2' * Y / 2 - 1000)^2 ) / lambda; ((Y' * Y) \ ((d' * Y)) - 1000/(Y' * Y))^2 + 
-            tmp_k = b' * Y - ( (d2' * Y / 2 - 1000)^2 )/ lambda; %need to divide d'*y by 2 or else count twice the same thing
+            tmp_k = b' * Y - ( (d' * Y / 2 - 1000)^2 )/ lambda; %need to divide d'*y by 2 or else count twice the same thing
             if tmp_k > best_k
                 best_k = tmp_k;
                 best_i = i;
@@ -71,8 +54,8 @@ function [X, chunks, ok] = custom_solver(allBS, UE, BS_per_km, DEBUG)
             
         if (best_i ~= 0)
             X(best_i) = 1;
-            K_old = K;
-            K = best_k;
+%             K_old = K;
+%             K = best_k;
             SX = S' * X;
         else
             %disp('problem -> maximum reached before constraints were respected.')

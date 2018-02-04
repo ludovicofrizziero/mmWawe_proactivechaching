@@ -3,7 +3,7 @@
 % clc;
 % 
 % all_files = dir('RESULTS//savings*');
-% load(strcat('RESULTS//', all_files(3).name));
+% load(strcat('RESULTS//', all_files(1).name));
 % 
 % s = savings{1};
 % 
@@ -209,7 +209,7 @@ for func = 1:3
 end
 xlabel('Velocity [Km/h]');
 ylabel('QoS');
-legend('Random f', 'Custom', 'Random');
+legend('Random f', 'Custom', 'Random', 'Location', 'southeast');
 %%
 
 %% QoS

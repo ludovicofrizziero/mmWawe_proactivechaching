@@ -45,7 +45,7 @@ R = d_R + N_0*W_L; % road width
 BS_per_km = 10;
 
 %% parameters for simulation
-n_rep_PL = 100; % number of repetition per choice of parameters
+n_rep_PL = 12; % number of repetition per choice of parameters
 theta_out = -5; %SINR outage threshold [dB]
 outage_thresh = 10^(theta_out/10); %SINR outage threshold
 % T_sim = floor(1000/v); % simulation duration [s]
@@ -95,7 +95,7 @@ for v = (70:10:130)/3.6 %set of velocities for the ue [m/s]
                 X = [];
                 chunks = [];
                 while ~ok
-                    [n_BS_top, n_BS_bottom, pos_top, pos_bottom] = deploy_bs(BS_per_km, road_length, R);
+%                     [n_BS_top, n_BS_bottom, pos_top, pos_bottom] = deploy_bs(BS_per_km, road_length, R);
 
                     allBS = cell(n_BS_top + n_BS_bottom, 1);
                     for i = 1:n_BS_top                
@@ -133,20 +133,14 @@ for v = (70:10:130)/3.6 %set of velocities for the ue [m/s]
                 servingBS_IDs = zeros(length(sim_steps), 1);
                 for t = sim_steps 
                     
-                    if shared_data.servingBS.memory <= 0
-                        d = zeros(length(allBS), 1);
-                        for i = 1:length(allBS)
-                            tmp = abs(allBS{i}.pos(1) - UE.pos(1));
-                            if allBS{i}.memory > 0 && tmp < 1500/BS_per_km
-                                d(i) = tmp;
-                            else
-                                d(i) = 1e10;
-                            end
-                        end
-                        [~, i] = min(d);
-
-                        shared_data.servingBS.handover(allBS{i});
+                    d = zeros(length(allBS), 1);
+                    for i = 1:length(allBS)
+                        d(i) = abs(allBS{i}.pos(1)- UE.pos(1)=;
                     end
+                    [~, i] = min(d);
+                    
+                    allBS{i}.handover(allBS[i)
+                    
                     
                     UE.update(t, dt);
 
