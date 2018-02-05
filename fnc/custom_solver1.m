@@ -1,4 +1,4 @@
-function [X, chunks, ok] = custom_solver(allBS, UE, BS_per_km, DEBUG)    
+function [X, chunks, ok] = custom_solver1(allBS, UE, BS_per_km, DEBUG)    
     ok = true; %simple error signaling
     N = max(size(allBS));
     chunks = zeros(N, 1); %this must be a col vector
@@ -17,7 +17,7 @@ function [X, chunks, ok] = custom_solver(allBS, UE, BS_per_km, DEBUG)
     SX = S' * X;
 %     K_old = -1e12;
 %     K = -1e11;
-    while SX < 1050 && chunks' * X < UE.requested_file_size 
+    while SX < 1000 && chunks' * X < UE.requested_file_size 
         best_i = 0;
         best_k = -1e12;
 %         best_d = zeros(N, 1);
@@ -48,7 +48,7 @@ function [X, chunks, ok] = custom_solver(allBS, UE, BS_per_km, DEBUG)
             end
         end
         
-        if DEBUG
+        if DEBUG && best_i > 0
             fprintf('%d ', allBS{best_i}.ID);
         end
             

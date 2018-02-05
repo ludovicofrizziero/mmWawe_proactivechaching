@@ -31,6 +31,7 @@ classdef BaseStation < handle
         pos      
         BF %beam forming object
         signal_power_at_ue
+        support_start
     end
     
     methods
@@ -75,11 +76,8 @@ classdef BaseStation < handle
             end
             BS.compute_signal_power();
                        
-            BS.n = poissrnd(BS.mean_n);
-            M = 350e6 * 8; %mean
-            V = 200e6 * 8; %variance
-            used_mem = int64(sum(lognrnd(log(M^2/sqrt(V+M^2)), sqrt(log(V/M^2 + 1)), 1, BS.n)));            
-            BS.memory = max(0, BS.max_memory - used_mem); %free memory
+            BS.n = poissrnd(BS.mean_n);                                  
+            BS.memory = 0;
         end
         
         function update(BS, sim_time, dt)                            
@@ -131,20 +129,22 @@ classdef BaseStation < handle
 %             %at this point the station is offering a certain amount of space for the UE. 
 %             %It need not be the case the BS will actually receive the file
             mean_conn_time = (1000/BS_per_km) / BS.sharedData.UE.vel;
-            mem = int64( BS.sharedData.UE.requested_rate * (2 * mean_conn_time + 0.5*randn(1)) * 1e9 ) ; %[bits]
+            mem = int64( BS.sharedData.UE.requested_rate * 3 * mean_conn_time * 1e9 ) ; %[bits]                        
             
-            if mem > BS.memory
+            if mem < 0 %should never happen (just avoid eventual bugs)
                 mem = 0;
             end
             
-            if mem < 0
-                mem = 0;
+            if rand(1) < 0.05
+                %simulate the situation the BS doesn't have enougth mem for the UE
+                mem = int64(rand(1) * mem);
             end
         end
         
         function allocate_memory_for_ue(BS, mem)
             %at this point the station has been allocated with a chunck of the file requested by the UE
-            BS.memory = mem; %free memory no more needed, reuse it as actual storage for the UE 
+            BS.memory = mem;
+            BS.support_start = BS.pos(1) - ((double(mem)/1e9) * BS.sharedData.UE.vel / BS.sharedData.UE.requested_rate) / 2;
         end
         
         function file_chunk = download_file(BS, dt, rate)

@@ -61,6 +61,9 @@ for v = vels
             ue_w_time = [ue_w_time; sum(s.ue_waiting_time(1:end-5))];
             bs_mem_left = [bs_mem_left; sum(s.BSs_mem_state(1:end-15))]; 
             tot_chunks = [tot_chunks; sum(s.chunks)];
+            if sum(s.chunks) == 0
+                tot_chunks(end) = 1e9; %sometimes a solution is not found since all BS have full memory
+            end
         end
         
         idx = (v-70)/10 + 1;
@@ -90,7 +93,7 @@ end
 hold off
 xlabel('velocity [Km/h]');
 ylabel('[GBytes]');
-legend('Random f', 'Custom', 'Random');
+legend('Custom1', 'Random1', 'Custom2', 'Random2');
 %%
 
 %% wait time
@@ -107,7 +110,7 @@ end
 hold off
 xlabel('velocity [Km/h]');
 ylabel('[s]');
-legend('Random f', 'Custom', 'Random');
+legend('Custom1', 'Random1', 'Custom2', 'Random2');
 %%
 
 %% leftover mem at bs
@@ -124,7 +127,7 @@ end
 hold off
 xlabel('velocity [Km/h]');
 ylabel('[GBytes]');
-legend('Random f', 'Custom', 'Random');
+legend('Custom1', 'Random1', 'Custom2', 'Random2');
 %%
 
 % figure;
@@ -149,6 +152,7 @@ legend('Random f', 'Custom', 'Random');
 %% QoS, WARNING: THIS IS ONLY A SKETCH IDEA
 
 %QoS: evaluate average UE buffer usage (ideal should be around 50-75% ???)
+colors = {'b:', 'r:', 'g:', 'k:'};
 out_buff = cell(1,1);
 for v = vels
     name = strcat('RESULTS//savings_v', num2str(v), '*');
@@ -165,6 +169,7 @@ for v = vels
         idx = (v-70)/10 + 1;
         out_buff{idx, func_idx} = struct;
         out_buff{idx, func_idx}.mean = mean(ue_buff);
+        out_buff{idx, func_idx}.std = std(ue_buff);
     end
 end
 
@@ -173,12 +178,20 @@ title('UE buffer average load (with consumption rate 0.068 Gbit/s)')
 hold on
 grid on
 max_buff = double(s.ue_max_buffer);
+legend_subset = [];
 for i = 1:min(size(out))
     y = [];
+    ci = [];
     for j = 1:max(size(out))
         y = [y; out_buff{j, i}.mean];
+        pd = makedist('Normal', 'mu', out_buff{j, i}.mean, 'sigma', out_buff{j, i}.std);
+        tmp_ci = paramci(pd);
+        ci = [ci; tmp_ci(1, :)];
     end
-    plot(vels, y / max_buff, '-*');
+    ci(:, 1) = (y - ci(:, 1)) / max_buff; %center confidence intervals on data points
+    ci(:, 2) = (y + ci(:, 2)) / max_buff; %center confidence intervals on data points
+    h = plot(vels, y / max_buff, '-*', vels, ci(:, 1), colors{i}, vels, ci(:, 2), colors{i});
+    legend_subset(i) = h(1);
 end
 plot([vels(1), vels(end)], ones(2,1) * 0.5, '--');
 plot([vels(1), vels(end)], ones(2,1))
@@ -187,29 +200,36 @@ hold off
 grid off
 xlabel('velocity [Km/h]');
 ylabel('Buffer load [%]');
-legend('Random f', 'Custom', 'Random', 'Ideal load', 'Max load');
+legend(legend_subset, 'Custom1', 'Random1', 'Custom2', 'Random2', 'Ideal load', 'Max load');
 
 
 
 figure;
 title('QoS averaged for all velocities ');
-a = 0:0.01:1;
-for func = 1:3    
+legend_subset = [];
+for func = 1:min(size(out))    
     hold on;
     y = [];
+    ci = [];
     for vel = 1:max(size(out))
         lost = out{vel,func}.lost_verbose / (0.068 * 1e9);
         wait = out{vel,func}.time_verbose;
         den = out{vel, func}.chunks_verbose/ (0.068 * 1e9);
-        tmp = (wait + lost) ./ den;
+        tmp = (wait + lost) ./ (den+wait);
         y = [y; mean(tmp)];
+        pd = makedist('Normal', 'mu', mean(tmp), 'sigma', std(tmp));
+        tmp_ci = paramci(pd);
+        ci = [ci; tmp_ci(1, :)];
     end
-    plot(vels, 1 - y);    
+    ci(:, 1) = 1 - y - ci(:, 1); %center confidence intervals on data points
+    ci(:, 2) = 1 - y + ci(:, 2); %center confidence intervals on data points
+    h = plot(vels, 1 - y, '-*', vels, ci(:, 1), colors{func}, vels, ci(:, 2), colors{func});  
+    legend_subset(func) = h(1);
     hold off;
 end
 xlabel('Velocity [Km/h]');
 ylabel('QoS');
-legend('Random f', 'Custom', 'Random', 'Location', 'southeast');
+legend(legend_subset, 'Custom1', 'Random1', 'Custom2', 'Random2', 'Location', 'southeast');
 %%
 
 %% QoS

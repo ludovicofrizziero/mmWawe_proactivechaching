@@ -45,7 +45,7 @@ R = d_R + N_0*W_L; % road width
 BS_per_km = 10;
 
 %% parameters for simulation
-n_rep_PL = 100; % number of repetition per choice of parameters
+n_rep_PL = 50; % number of repetition per choice of parameters
 theta_out = -5; %SINR outage threshold [dB]
 outage_thresh = 10^(theta_out/10); %SINR outage threshold
 % T_sim = floor(1000/v); % simulation duration [s]
@@ -54,7 +54,7 @@ T_tracking = 0.1; % tracking periodicity for BF vector [s]
 T_mul_users_update = 1; %how often BSs change n of connected users 
 t_H = 0.3; % udpate of channel instances
 n_users = 25; % mean number of users per BS, poisson r.v.
-alloc_func = { @VCG_auction_solver; @custom_solver; @random_allocation};
+alloc_func = {@custom_solver1; @random_allocation1}; %; @custom_solver2; @random_allocation2};
 
 DEBUG = n_rep_PL < 2;
 SAVE_DATA_VERBOSE = true;
@@ -133,21 +133,9 @@ for v = (70:10:130)/3.6 %set of velocities for the ue [m/s]
                 servingBS_IDs = zeros(length(sim_steps), 1);
                 for t = sim_steps 
                     
-                    if shared_data.servingBS.memory <= 0
-                        d = zeros(length(allBS), 1);
-                        for i = 1:length(allBS)
-                            tmp = abs(allBS{i}.pos(1) - UE.pos(1));
-                            if allBS{i}.memory > 0 && tmp < 1500/BS_per_km
-                                d(i) = tmp;
-                            else
-                                d(i) = 1e10;
-                            end
-                        end
-                        [~, i] = min(d);
+                    distance_handover(allBS, shared_data); 
+%                     power_handover(allBS, shared_data); 
 
-                        shared_data.servingBS.handover(allBS{i});
-                    end
-                    
                     UE.update(t, dt);
 
                     for i = 1:length(allBS)

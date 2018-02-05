@@ -1,9 +1,9 @@
-function [X, chunks, ok] = random_allocation(allBS, UE, BS_per_km, DEBUG)
+function [X, chunks, ok] = random_allocation1(allBS, UE, BS_per_km, DEBUG)
     ok = true; %simple error signaling
     N = max(size(allBS));
     chunks = zeros(N, 1); %this must be a col vector
     for i = 1:N
-        chunks(i) = allBS{i}.get_mem_for_UE(BS_per_km); % int64(UE.max_buffer /4 + rand(1) * UE.max_buffer/2); % 
+        chunks(i) = int64(UE.max_buffer /4 + rand(1) * UE.max_buffer/2); 
     end
         
     S = (double(chunks)/1e9) * UE.vel / UE.requested_rate; % [meters]
