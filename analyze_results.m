@@ -83,16 +83,17 @@ end
 figure;
 title('average lost data');
 hold on
+grid on
 for i = 1:min(size(out))
     y = [];
     for j = 1:max(size(out))
         y = [y; out{j, i}.mean_lost];
     end
-    plot(vels, y / 8e9, '-o');
+    plot(vels, y / 8e6, '-o');
 end
 hold off
 xlabel('velocity [Km/h]');
-ylabel('[GBytes]');
+ylabel('[MBytes]');
 legend('Custom1', 'Random1', 'Custom2', 'Random2');
 %%
 
@@ -100,6 +101,7 @@ legend('Custom1', 'Random1', 'Custom2', 'Random2');
 figure;
 title('average cumulative wait time')
 hold on
+grid on
 for i = 1:min(size(out))
     y = [];
     for j = 1:max(size(out))
@@ -117,16 +119,17 @@ legend('Custom1', 'Random1', 'Custom2', 'Random2');
 figure;
 title('average leftover data at bs')
 hold on
+grid on
 for i = 1:min(size(out))
     y = [];
     for j = 1:max(size(out))
         y = [y; out{j, i}.mean_mem];
     end
-    plot(vels, y / 8e9, '-*');
+    plot(vels, y / 8e6, '-*');
 end
 hold off
 xlabel('velocity [Km/h]');
-ylabel('[GBytes]');
+ylabel('[MBytes]');
 legend('Custom1', 'Random1', 'Custom2', 'Random2');
 %%
 
@@ -197,7 +200,7 @@ plot([vels(1), vels(end)], ones(2,1) * 0.5, '--');
 plot([vels(1), vels(end)], ones(2,1))
 plot(vels(1), 1.1); % just to show better the max load line
 hold off
-grid off
+% grid off
 xlabel('velocity [Km/h]');
 ylabel('Buffer load [%]');
 legend(legend_subset, 'Custom1', 'Random1', 'Custom2', 'Random2', 'Ideal load', 'Max load');
@@ -209,13 +212,14 @@ title('QoS averaged for all velocities ');
 legend_subset = [];
 for func = 1:min(size(out))    
     hold on;
+    grid on;
     y = [];
     ci = [];
     for vel = 1:max(size(out))
         lost = out{vel,func}.lost_verbose / (0.068 * 1e9);
         wait = out{vel,func}.time_verbose;
         den = out{vel, func}.chunks_verbose/ (0.068 * 1e9);
-        tmp = (wait + lost) ./ (den+wait);
+        tmp = (wait + lost) ./ (den + wait);
         y = [y; mean(tmp)];
         pd = makedist('Normal', 'mu', mean(tmp), 'sigma', std(tmp));
         tmp_ci = paramci(pd);
