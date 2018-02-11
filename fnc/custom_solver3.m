@@ -3,7 +3,7 @@ function [X, chunks, ok] = custom_solver3(allBS, UE, BS_per_km, DEBUG)
     N = max(size(allBS));
     chunks = zeros(N, 1); %this must be a col vector
     for i = 1:N
-        chunks(i) = UE.max_buffer * (rand(1) > 0.05);
+        chunks(i) = 3 * UE.max_buffer / 4 * int64((rand(1) > 0.05));
         if chunks(i) > UE.max_buffer
             chunks(i) = 0;
         end
@@ -16,7 +16,7 @@ function [X, chunks, ok] = custom_solver3(allBS, UE, BS_per_km, DEBUG)
     SX = S' * X;
 %     K_old = -1e12;
 %     K = -1e11;
-    while SX < 1000 && chunks' * X < UE.requested_file_size 
+    while SX < 1200 && chunks' * X < UE.requested_file_size 
         best_i = 0;
         best_k = -1e12;
 %         best_d = zeros(N, 1);
@@ -64,22 +64,23 @@ function [X, chunks, ok] = custom_solver3(allBS, UE, BS_per_km, DEBUG)
     end
     
     if ok
-        I = X' * X;
+        I = X' * X; 
         for i = (find(X))'
-            chunks(i) = chunks(i) / I;
+            chunks(i) = int64( (1100 * UE.requested_rate / (I * UE.m_vel)) * 1e9 );
         end
     end
 
     
     %% for debug, plot BS disposition
     if DEBUG
+        S = (double(chunks)/1e9) * UE.vel / UE.requested_rate; % [meters]
         figure;
         hold on;
         grid on;
         for i = 1:N
             plot(allBS{i}.pos(1), allBS{i}.pos(2), '*')
             l = S(i)/2;
-            if X(i) > 1
+            if X(i) > 0
                 plot([allBS{i}.pos(1) - l , allBS{i}.pos(1)+S(i)-l], [allBS{i}.pos(2), allBS{i}.pos(2)] - allBS{i}.ID / 10)
             end
             text(allBS{i}.pos(1), allBS{i}.pos(2)+1, strcat('ID: ', int2str(allBS{i}.ID)));

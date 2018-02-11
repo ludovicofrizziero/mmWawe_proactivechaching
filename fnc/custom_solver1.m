@@ -73,7 +73,9 @@ function [X, chunks, ok] = custom_solver1(allBS, UE, BS_per_km, DEBUG)
         for i = 1:N
             plot(allBS{i}.pos(1), allBS{i}.pos(2), '*')
             l = S(i)/2;
-            plot([allBS{i}.pos(1) - l , allBS{i}.pos(1)+S(i)-l], [allBS{i}.pos(2), allBS{i}.pos(2)] - allBS{i}.ID / 10)
+            if X(i) > 0
+                plot([allBS{i}.pos(1) - l , allBS{i}.pos(1)+S(i)-l], [allBS{i}.pos(2), allBS{i}.pos(2)] - allBS{i}.ID / 10)
+            end
             text(allBS{i}.pos(1), allBS{i}.pos(2)+1, strcat('ID: ', int2str(allBS{i}.ID)));
 %             text(allBS{i}.pos(1), allBS{i}.pos(2)+2, strcat('w: ', num2str(n(i)*w(i)))); %weigth of BS
             if X(i) > 0

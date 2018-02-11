@@ -74,6 +74,7 @@ for v = vels
         out{idx, func_idx}.time_verbose = ue_w_time;
         out{idx, func_idx}.lost_verbose = ue_d_lost + bs_mem_left;
         out{idx, func_idx}.chunks_verbose = tot_chunks;
+        out{idx, func_idx}.sim_duration = length(s.ue_waiting_time) * 0.1;
         %out{idx, func_idx}.ue_buff = saves{1}.ue_buffer;
         %out{idx, func_idx}.ue_max_buff = saves{1}.ue_max_buffer;
     end
@@ -94,7 +95,7 @@ end
 hold off
 xlabel('velocity [Km/h]');
 ylabel('[MBytes]');
-legend('Custom1', 'Random1', 'Custom2', 'Random2');
+legend('Custom1', 'Custom2', 'Random1', 'Random2');
 %%
 
 %% wait time
@@ -112,7 +113,7 @@ end
 hold off
 xlabel('velocity [Km/h]');
 ylabel('[s]');
-legend('Custom1', 'Random1', 'Custom2', 'Random2');
+legend('Custom1', 'Custom2', 'Random1', 'Random2');
 %%
 
 %% leftover mem at bs
@@ -130,7 +131,7 @@ end
 hold off
 xlabel('velocity [Km/h]');
 ylabel('[MBytes]');
-legend('Custom1', 'Random1', 'Custom2', 'Random2');
+legend('Custom1', 'Custom2', 'Random1', 'Random2');
 %%
 
 % figure;
@@ -203,7 +204,7 @@ hold off
 % grid off
 xlabel('velocity [Km/h]');
 ylabel('Buffer load [%]');
-legend(legend_subset, 'Custom1', 'Random1', 'Custom2', 'Random2', 'Ideal load', 'Max load');
+legend(legend_subset, 'Custom1', 'Custom2', 'Random1', 'Random2', 'Ideal load', 'Max load');
 
 
 
@@ -218,8 +219,10 @@ for func = 1:min(size(out))
     for vel = 1:max(size(out))
         lost = out{vel,func}.lost_verbose / (0.068 * 1e9);
         wait = out{vel,func}.time_verbose;
-        den = out{vel, func}.chunks_verbose/ (0.068 * 1e9);
-        tmp = (wait + lost) ./ (den + wait);
+%         den = out{vel, func}.chunks_verbose/ (0.068 * 1e9);
+%         tmp = (wait + lost) ./ (den + wait);
+        den = out{vel,func}.sim_duration; %tot simulation duration
+        tmp = (wait + lost) ./ den;
         y = [y; mean(tmp)];
         pd = makedist('Normal', 'mu', mean(tmp), 'sigma', std(tmp));
         tmp_ci = paramci(pd);
@@ -233,7 +236,7 @@ for func = 1:min(size(out))
 end
 xlabel('Velocity [Km/h]');
 ylabel('QoS');
-legend(legend_subset, 'Custom1', 'Random1', 'Custom2', 'Random2', 'Location', 'southeast');
+legend(legend_subset, 'Custom1', 'Custom2', 'Random1', 'Random2', 'Location', 'southeast');
 %%
 
 %% QoS

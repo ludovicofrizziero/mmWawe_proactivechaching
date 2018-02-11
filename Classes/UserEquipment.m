@@ -57,9 +57,9 @@ classdef UserEquipment < handle
 %             rates = [0.016, 0.024, 0.035, 0.045, 0.053, 0.068]; %1440p and 2160p (4K) common bitrates (compressed video) [Gbps]
 %             UE.requested_rate = rates(randi(size(rates), 1));
             UE.requested_rate = rate;
-            M = 1e9 * 8;   %[bits] mean
-            V = 350e6 * 8; %[bits] variance            
-            UE.requested_file_size = int64(sum(lognrnd(log(M^2/sqrt(V+M^2)), sqrt(log(V/M^2 + 1))))); 
+%             M = 1e9 * 8;   %[bits] mean
+%             V = 350e6 * 8; %[bits] variance            
+            UE.requested_file_size = 8e9; % 1 GByte % int64(sum(lognrnd(log(M^2/sqrt(V+M^2)), sqrt(log(V/M^2 + 1))))); 
             UE.max_buffer = int64(UE.requested_rate * 15 * 1e9); %[bits] allow for up to 10 sec of buffering
             UE.buffer = int64(1); %else wait_time is wrongly updated at the very first step            
             
