@@ -45,7 +45,7 @@ R = d_R + N_0*W_L; % road width
 BS_per_km = 10;
 
 %% parameters for simulation
-n_rep_PL = 12; % number of repetition per choice of parameters
+n_rep_PL = 300; % number of repetition per choice of parameters
 theta_out = -5; %SINR outage threshold [dB]
 outage_thresh = 10^(theta_out/10); %SINR outage threshold
 % T_sim = floor(1000/v); % simulation duration [s]
@@ -54,7 +54,7 @@ T_tracking = 0.1; % tracking periodicity for BF vector [s]
 T_mul_users_update = 1; %how often BSs change n of connected users 
 t_H = 0.3; % udpate of channel instances
 n_users = 25; % mean number of users per BS, poisson r.v.
-alloc_func = {@custom_solver3; @random_allocation3};
+alloc_func = {@custom_solver3; @random_allocation3; @random_allocation1};
 
 DEBUG = n_rep_PL < 2;
 SAVE_DATA_VERBOSE = true;

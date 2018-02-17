@@ -1,47 +1,48 @@
-clear all;
+% clear all;
+% close all;
+% clc;
+% 
+% all_files = dir('RESULTS//savings*');
+% load(strcat('RESULTS//', all_files(1).name));
+% 
+% s = savings{1};
+% 
+% figure;
+% plot(s.servingBS_IDs, '-');
+% title('serving BS ID');
+% 
+% figure;
+% hold on
+% plot(s.all_ids, s.chunks, 'o');
+% plot(s.all_ids, s.BSs_mem_state, '*');
+% title('memory state at BSs');
+% legend('starting situation', 'final situation');
+% hold off
+% 
+% figure;
+% plot(s.rate, '-');
+% title('rate [bit/s]');
+% 
+% figure;
+% hold on
+% plot(s.ue_buffer);
+% plot([1,max(size(s.ue_buffer))], ones(2,1) * double(s.ue_max_buffer));
+% hold off
+% title(strcat('UE buffer (with consumption rate of', num2str(s.ue_requested_rate, ' %1.3f'), ' Gbps )'));
+% 
+% figure;
+% plot(s.ue_waiting_time, 'o');
+% title('UE waiting times');
+% 
+% figure;
+% plot(s.ue_lost_data);
+% title('UE lost data');
+% fprintf('PAUSED, PRESS ANY KEY TO CONTINUE\n');
+% pause();
+
 close all;
-clc;
-
-all_files = dir('RESULTS//savings*');
-load(strcat('RESULTS//', all_files(1).name));
-
-s = savings{1};
-
-figure;
-plot(s.servingBS_IDs, '-');
-title('serving BS ID');
-
-figure;
-hold on
-plot(s.all_ids, s.chunks, 'o');
-plot(s.all_ids, s.BSs_mem_state, '*');
-title('memory state at BSs');
-legend('starting situation', 'final situation');
-hold off
-
-figure;
-plot(s.rate, '-');
-title('rate [bit/s]');
-
-figure;
-hold on
-plot(s.ue_buffer);
-plot([1,max(size(s.ue_buffer))], ones(2,1) * double(s.ue_max_buffer));
-hold off
-title(strcat('UE buffer (with consumption rate of', num2str(s.ue_requested_rate, ' %1.3f'), ' Gbps )'));
-
-figure;
-plot(s.ue_waiting_time, 'o');
-title('UE waiting times');
-
-figure;
-plot(s.ue_lost_data);
-title('UE lost data');
-fprintf('PAUSED, PRESS ANY KEY TO CONTINUE\n');
-pause();
-
-close all;
 clear all;
+addpath(genpath('utils'))
 
 out = cell(1,1);
 vels = 70:10:130;
@@ -74,8 +75,9 @@ for v = vels
         
         idx = (v-70)/10 + 1;
         out{idx, func_idx} = struct;
-        out{idx, func_idx}.mean_lost = mean(ue_d_lost);
+        out{idx, func_idx}.mean_lost = mean(ue_d_lost);        
         out{idx, func_idx}.mean_time = mean(ue_w_time);
+        out{idx, func_idx}.CI_time = ConfIntervals(ue_w_time);
         out{idx, func_idx}.mean_mem = mean(bs_mem_left);
         out{idx, func_idx}.time_verbose = ue_w_time;
         out{idx, func_idx}.lost_verbose = ue_d_lost + bs_mem_left;
@@ -87,6 +89,9 @@ for v = vels
     end
 end
 
+symbols = {'b-*', 'r-^', 'g-o', 'k-x'}; %for functions
+colors = {'b:', 'r:', 'g:', 'k:'}; %for Conf. Interv.
+
 %% lost memory
 figure;
 title('average lost data');
@@ -97,12 +102,12 @@ for i = 1:min(size(out))
     for j = 1:max(size(out))
         y = [y; out{j, i}.mean_lost];
     end
-    plot(vels, y / 8e6, '-o');
+    plot(vels, y / 8e6, symbols{i});
 end
 hold off
 xlabel('velocity [Km/h]');
 ylabel('[MBytes]');
-legend('Custom1', 'Custom2', 'Random1', 'Random2');
+legend('Custom', 'Random1', 'Random2');
 %%
 
 %% wait time
@@ -112,15 +117,17 @@ hold on
 grid on
 for i = 1:min(size(out))
     y = [];
+    ci = [];
     for j = 1:max(size(out))
         y = [y; out{j, i}.mean_time];
+        ci = [ci; out{j, i}.CI_time];
     end
-    plot(vels, y, '-^');
+    plot(vels, y, symbols{i}, vels, ci(:, 1), colors{i}, vels, ci(:, 2), colors{i});
 end
 hold off
 xlabel('velocity [Km/h]');
 ylabel('[s]');
-legend('Custom1', 'Custom2', 'Random1', 'Random2');
+legend('Custom', 'Random1', 'Random2');
 %%
 
 %% leftover mem at bs
@@ -133,12 +140,12 @@ for i = 1:min(size(out))
     for j = 1:max(size(out))
         y = [y; out{j, i}.mean_mem];
     end
-    plot(vels, y / 8e6, '-*');
+    plot(vels, y / 8e6, symbols{i});
 end
 hold off
 xlabel('velocity [Km/h]');
 ylabel('[MBytes]');
-legend('Custom1', 'Custom2', 'Random1', 'Random2');
+legend('Custom', 'Random1', 'Random2');
 %%
 
 % figure;
@@ -183,8 +190,7 @@ for v = vels
         
         idx = (v-70)/10 + 1;
         out_buff{idx, func_idx} = struct;
-        out_buff{idx, func_idx}.mean = mean(ue_buff);
-        out_buff{idx, func_idx}.std = std(ue_buff);
+        out_buff{idx, func_idx}.buff = ue_buff;
     end
 end
 
@@ -198,14 +204,10 @@ for i = 1:min(size(out))
     y = [];
     ci = [];
     for j = 1:max(size(out))
-        y = [y; out_buff{j, i}.mean];
-        pd = makedist('Normal', 'mu', out_buff{j, i}.mean, 'sigma', out_buff{j, i}.std);
-        tmp_ci = paramci(pd);
-        ci = [ci; tmp_ci(1, :)];
+        y = [y; mean(out_buff{j, i}.buff)/ max_buff];        
+        ci = [ci; ConfIntervals(out_buff{j, i}.buff / max_buff)];
     end
-    ci(:, 1) = (y - ci(:, 1)) / max_buff; %center confidence intervals on data points
-    ci(:, 2) = (y + ci(:, 2)) / max_buff; %center confidence intervals on data points
-    h = plot(vels, y / max_buff, '-*', vels, ci(:, 1), colors{i}, vels, ci(:, 2), colors{i});
+    h = plot(vels, y, symbols{i}, vels, ci(:, 1), colors{i}, vels, ci(:, 2), colors{i});
     legend_subset(i) = h(1);
 end
 plot([vels(1), vels(end)], ones(2,1) * 0.5, '--');
@@ -215,7 +217,7 @@ hold off
 % grid off
 xlabel('velocity [Km/h]');
 ylabel('Buffer load [%]');
-legend(legend_subset, 'Custom1', 'Custom2', 'Random1', 'Random2', 'Ideal load', 'Max load');
+legend(legend_subset, 'Custom', 'Random1', 'Random2', 'Ideal load', 'Max load');
 
 
 
@@ -234,20 +236,16 @@ for func = 1:min(size(out))
 %         tmp = (wait + lost) ./ (den + wait);
         den = out{vel,func}.sim_duration; %tot simulation duration
         tmp = (wait + lost) ./ den;
-        y = [y; mean(tmp)];
-        pd = makedist('Normal', 'mu', mean(tmp), 'sigma', std(tmp));
-        tmp_ci = paramci(pd);
-        ci = [ci; tmp_ci(1, :)];
+        y = [y; mean(tmp)];       
+        ci = [ci; ConfIntervals(tmp)];
     end
-    ci(:, 1) = 1 - y - ci(:, 1); %center confidence intervals on data points
-    ci(:, 2) = 1 - y + ci(:, 2); %center confidence intervals on data points
-    h = plot(vels, 1 - y, '-*', vels, ci(:, 1), colors{func}, vels, ci(:, 2), colors{func});  
+    h = plot(vels, 1 - y, symbols{func}, vels, 1- ci(:, 1), colors{func}, vels, 1-ci(:, 2), colors{func});  
     legend_subset(func) = h(1);
     hold off;
 end
 xlabel('Velocity [Km/h]');
 ylabel('QoS');
-legend(legend_subset, 'Custom1', 'Custom2', 'Random1', 'Random2', 'Location', 'southeast');
+legend(legend_subset, 'Custom', 'Random1', 'Random2', 'Location', 'southeast');
 %%
 
 %% QoS
