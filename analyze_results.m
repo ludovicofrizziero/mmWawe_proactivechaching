@@ -1,44 +1,44 @@
-% clear all;
-% close all;
-% clc;
-% 
-% all_files = dir('RESULTS//savings*');
-% load(strcat('RESULTS//', all_files(1).name));
-% 
-% s = savings{1};
-% 
-% figure;
-% plot(s.servingBS_IDs, '-');
-% title('serving BS ID');
-% 
-% figure;
-% hold on
-% plot(s.all_ids, s.chunks, 'o');
-% plot(s.all_ids, s.BSs_mem_state, '*');
-% title('memory state at BSs');
-% legend('starting situation', 'final situation');
-% hold off
-% 
-% figure;
-% plot(s.rate, '-');
-% title('rate [bit/s]');
-% 
-% figure;
-% hold on
-% plot(s.ue_buffer);
-% plot([1,max(size(s.ue_buffer))], ones(2,1) * double(s.ue_max_buffer));
-% hold off
-% title(strcat('UE buffer (with consumption rate of', num2str(s.ue_requested_rate, ' %1.3f'), ' Gbps )'));
-% 
-% figure;
-% plot(s.ue_waiting_time, 'o');
-% title('UE waiting times');
-% 
-% figure;
-% plot(s.ue_lost_data);
-% title('UE lost data');
-% fprintf('PAUSED, PRESS ANY KEY TO CONTINUE\n');
-% pause();
+clear all;
+close all;
+clc;
+
+all_files = dir('RESULTS//savings*');
+load(strcat('RESULTS//', all_files(1).name));
+
+s = savings{1};
+
+figure;
+plot(s.servingBS_IDs, '-');
+title('serving BS ID');
+
+figure;
+hold on
+plot(s.all_ids, s.chunks, 'o');
+plot(s.all_ids, s.BSs_mem_state, '*');
+title('memory state at BSs');
+legend('starting situation', 'final situation');
+hold off
+
+figure;
+plot(s.rate, '-');
+title('rate [bit/s]');
+
+figure;
+hold on
+plot(s.ue_buffer);
+plot([1,max(size(s.ue_buffer))], ones(2,1) * double(s.ue_max_buffer));
+hold off
+title(strcat('UE buffer (with consumption rate of', num2str(s.ue_requested_rate, ' %1.3f'), ' Gbps )'));
+
+figure;
+plot(s.ue_waiting_time, 'o');
+title('UE waiting times');
+
+figure;
+plot(s.ue_lost_data);
+title('UE lost data');
+fprintf('PAUSED, PRESS ANY KEY TO CONTINUE\n');
+pause();
 
 close all;
 clear all;
@@ -46,7 +46,11 @@ clear all;
 out = cell(1,1);
 vels = 70:10:130;
 for v = vels
-    name = strcat('RESULTS//savings_v', num2str(v), '*');
+    vel = num2str(v);
+    if v < 100
+        vel = strcat('0', vel);
+    end
+    name = strcat('RESULTS//savings_v', vel, '*');
     all_files = dir(name);
     for func_idx = 1:max(size(all_files))      
         saves = load(strcat('RESULTS//', all_files(func_idx).name));
@@ -55,12 +59,14 @@ for v = vels
         ue_w_time = [];
         bs_mem_left = [];        
         tot_chunks = [];
+        ue_rates = [];
         for i = 1:max(size(saves)) % # of monte carlo iterations per file
             s = saves{i};
             ue_d_lost = [ue_d_lost; sum(s.ue_lost_data(1:end-5))];%the last UE's positions are degenerate due to simulation ending  
             ue_w_time = [ue_w_time; sum(s.ue_waiting_time(1:end-5))];
             bs_mem_left = [bs_mem_left; sum(s.BSs_mem_state(1:end-15))]; 
             tot_chunks = [tot_chunks; sum(s.chunks)];
+            ue_rates = [ue_rates ; s.ue_requested_rate];
             if sum(s.chunks) == 0
                 tot_chunks(end) = 1e9; %sometimes a solution is not found since all BS have full memory
             end
@@ -75,6 +81,7 @@ for v = vels
         out{idx, func_idx}.lost_verbose = ue_d_lost + bs_mem_left;
         out{idx, func_idx}.chunks_verbose = tot_chunks;
         out{idx, func_idx}.sim_duration = length(s.ue_waiting_time) * 0.1;
+        out{idx, func_idx}.ue_rates = ue_rates;
         %out{idx, func_idx}.ue_buff = saves{1}.ue_buffer;
         %out{idx, func_idx}.ue_max_buff = saves{1}.ue_max_buffer;
     end
@@ -159,7 +166,11 @@ legend('Custom1', 'Custom2', 'Random1', 'Random2');
 colors = {'b:', 'r:', 'g:', 'k:'};
 out_buff = cell(1,1);
 for v = vels
-    name = strcat('RESULTS//savings_v', num2str(v), '*');
+    vel = num2str(v);
+    if v < 100
+        vel = strcat('0', vel);
+    end
+    name = strcat('RESULTS//savings_v', vel, '*');
     all_files = dir(name);
     for func_idx = 1:max(size(all_files))      
         saves = load(strcat('RESULTS//', all_files(func_idx).name));
@@ -178,7 +189,7 @@ for v = vels
 end
 
 figure;
-title('UE buffer average load (with consumption rate 0.068 Gbit/s)')
+title('UE buffer average load')
 hold on
 grid on
 max_buff = double(s.ue_max_buffer);
@@ -217,7 +228,7 @@ for func = 1:min(size(out))
     y = [];
     ci = [];
     for vel = 1:max(size(out))
-        lost = out{vel,func}.lost_verbose / (0.068 * 1e9);
+        lost = out{vel,func}.lost_verbose ./ (out{vel,func}.ue_rates * 1e9);
         wait = out{vel,func}.time_verbose;
 %         den = out{vel, func}.chunks_verbose/ (0.068 * 1e9);
 %         tmp = (wait + lost) ./ (den + wait);

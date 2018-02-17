@@ -59,9 +59,9 @@ classdef UserEquipment < handle
             if max(size(rate)) == 1 %single variable
                 UE.requested_rate = rate;
             elseif max(size(rate)) == 2 %rate is an interval
-                UE.requested_rate = (rate(2)-rate(1)) * rand(1) + rate(1);
+                UE.requested_rate = rate(2)-rate() rand(1)
             else
-                throw(MException('UE:rate', 'Bad rate format. It must be either a fixed number or an interval.'));
+                
             end
 %             M = 1e9 * 8;   %[bits] mean
 %             V = 350e6 * 8; %[bits] variance            
@@ -122,8 +122,7 @@ classdef UserEquipment < handle
                 end
             end
             
-            %
-            if UE.buffer == 0 && UE.hist_index > 1 && UE.pos(1) <= 1000
+            if UE.buffer == 0 && UE.hist_index > 1
                UE.wait_time_hist(UE.hist_index) = dt; 
             end
             

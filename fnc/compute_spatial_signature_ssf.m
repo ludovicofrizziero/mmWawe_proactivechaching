@@ -21,10 +21,11 @@ index = 1;
 for k = 1 : K
     if k == 1
         horiz_angle(k) = theta;
-        vertical_angle = phi;
-    else
-        vertical_angle = phi;
+%         vertical_angle = phi;
+%     else
+%         vertical_angle = phi;
     end
+    vertical_angle = phi;
     
     for l = 1 : L(k)
         %spatial_sig (index,:) = generate_single_path (horiz_angle(k) + ((-1)^(l-1))*subpath_angle(k,l), vertical_angle, n); % row 455 mmwave-channel-matrix.cc

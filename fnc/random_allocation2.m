@@ -33,6 +33,7 @@ function [X, chunks, ok] = random_allocation2(allBS, UE, BS_per_km, DEBUG)
     if DEBUG
         figure;
         hold on;
+        title('RAND 2')
         for i = 1:N
             plot(allBS{i}.pos(1), allBS{i}.pos(2), '*')
             l = S(i)/2;

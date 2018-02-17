@@ -42,10 +42,10 @@ d_R = 2.5;
 W_L = 3.75; % lane width
 N_0 = 3; % # of obstacle lanes per direction
 R = d_R + N_0*W_L; % road width
-BS_per_km = 10;
+BS_per_km = 5;
 
 %% parameters for simulation
-n_rep_PL = 12; % number of repetition per choice of parameters
+n_rep_PL = 1; % number of repetition per choice of parameters
 theta_out = -5; %SINR outage threshold [dB]
 outage_thresh = 10^(theta_out/10); %SINR outage threshold
 % T_sim = floor(1000/v); % simulation duration [s]
@@ -71,7 +71,8 @@ delete('RESULTS//savings*');
 global_start = tic;
 for v = (70:10:130)/3.6 %set of velocities for the ue [m/s]  
 %     [n_BS_top, n_BS_bottom, pos_top, pos_bottom] = deploy_bs(BS_per_km, road_length, R);
-%     for ue_r = 0.068 %[0.016, 0.045, 0.068] %set of rates for the ue [Gbit/s]        
+%     for ue_r = 0.068 %[0.016, 0.045, 0.068] %set of rates for the ue [Gbit/s]
+        ue_r = (0.15 - 0.06) * rand(1) + 0.06; %Gbit/s
         for alloc_func_idx = 1:max(size(alloc_func))
             fprintf('v = %3.0f Km/h, alloc_func = %s\n', round(v*3.6), func2str(alloc_func{alloc_func_idx}));
             T_sim = floor(1000/v); % simulation duration [s]
@@ -81,13 +82,13 @@ for v = (70:10:130)/3.6 %set of velocities for the ue [m/s]
             savings = cell(n_rep_PL, 1);
             tic; 
             parfor iter = 1:n_rep_PL                                       
-                ue_r = (0.15 - 0.06) * rand(1) + 0.06; %Gbit/s
+
                 start_ue_pos = [0, d_R + randi(3,1)*W_L - W_L/2, 0]; %(x,y,z) position of UE
                 shared_data = BaseStation.sharedData;
                 UE = UserEquipment(n_rx, f, start_ue_pos, v, ue_r, T_tracking, T_sim/dt);
                 shared_data.UE = UE;
                 UE.sharedData = shared_data; 
-                fprintf('\titeration: %d\n' , iter);
+                fprintf('\titeration: %d -> ue rate: %1.3f\n', iter, UE.requested_rate);
 
                 ok = false;
                 allBS = [];

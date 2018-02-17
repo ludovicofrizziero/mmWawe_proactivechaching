@@ -130,7 +130,10 @@ classdef BaseStation < handle
 %             %at this point the station is offering a certain amount of space for the UE. 
 %             %It need not be the case the BS will actually receive the file
             mean_conn_time = (1000/BS_per_km) / BS.sharedData.UE.m_vel;
-            mem = int64( BS.sharedData.UE.requested_rate * 2 * mean_conn_time * 1e9 ) ; %[bits]                        
+            alpha = 2;
+            if BS.sharedData.UE.m_vel < 100/3.6
+                mem = int64( BS.sharedData.UE.requested_rate * alpha * mean_conn_time * 1e9 ) ; %[bits]                        
+            end
             
             if mem < 0 %should never happen (just avoid eventual bugs)
                 mem = 0;
@@ -138,7 +141,7 @@ classdef BaseStation < handle
             
             if rand(1) < 0.05
                 %simulate the situation the BS doesn't have enougth mem for the UE
-                mem = 0; %int64(rand(1) * mem);
+                mem = int64(rand(1) * mem);
             end
         end
         

@@ -5,19 +5,18 @@ function [X, chunks, ok] = custom_solver1(allBS, UE, BS_per_km, DEBUG)
     for i = 1:N
         chunks(i) = allBS{i}.get_mem_for_UE(BS_per_km);
         if chunks(i) > UE.max_buffer
-            chunks(i) = 0;
+            chunks(i) = int64(3 * UE.max_buffer / 4);
         end
     end
     
     S = (double(chunks)/1e9) * UE.vel / UE.requested_rate; % [meters]
-    
-%     c = 1000/BS_per_km; 
+     
     b = double(chunks)/1e9;
     X = zeros(N,1);
     SX = S' * X;
 %     K_old = -1e12;
 %     K = -1e11;
-    while SX < 1000 && chunks' * X < UE.requested_file_size 
+    while SX < 1100 && chunks' * X < UE.requested_file_size 
         best_i = 0;
         best_k = -1e12;
 %         best_d = zeros(N, 1);
@@ -26,9 +25,10 @@ function [X, chunks, ok] = custom_solver1(allBS, UE, BS_per_km, DEBUG)
             Y(i) = 1;              
             
             d = zeros(N, 1);
-            for j = (find(Y))' %find(..) finds all nonzeros elements' indexies
+            indexies = (find(Y))';
+            for j = indexies %find(..) finds all nonzeros elements' indexies
                 j_x = allBS{j}.pos(1);
-                for t = (find(Y))'
+                for t = indexies
                     if t~=j
                         t_x = allBS{t}.pos(1);
                         if d(j) >= abs(t_x - j_x) || d(j) == 0
@@ -70,6 +70,7 @@ function [X, chunks, ok] = custom_solver1(allBS, UE, BS_per_km, DEBUG)
         figure;
         hold on;
         grid on;
+        title('CUSTOM 1')
         for i = 1:N
             plot(allBS{i}.pos(1), allBS{i}.pos(2), '*')
             l = S(i)/2;
@@ -83,7 +84,6 @@ function [X, chunks, ok] = custom_solver1(allBS, UE, BS_per_km, DEBUG)
             end
         end
         hold off;
-        grid off;
         
         fprintf('SX: %f\n', S' * X);
     end
