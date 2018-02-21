@@ -9,8 +9,8 @@
 \usepackage{epstopdf}
 \usepackage[pdftex]{graphicx}
 \usepackage[cmex10]{amsmath}
-\DeclareMathOperator*{\argmax}{arg\,max}
-\DeclareMathOperator*{\argmin}{arg\,min}
+%\DeclareMathOperator*{\argmax}{arg\,max}
+%\DeclareMathOperator*{\argmin}{arg\,min}
 % Also, note that the amsmath package sets \interdisplaylinepenalty to 10000
 % thus preventing page breaks from occurring within multiline equations. Use:
 \interdisplaylinepenalty=2500
@@ -221,16 +221,16 @@ The proposed optimization problem therefore is
 		OPTIMIZATION PROBLEM \\
 		\hline
 		\vbox{
-			$			
+			$$			
 			\begin{array}{l l l l l l}
-				\null \\[1ex]
-				\mathbf{x} \in \argmax_{\mathbf{x} \in \{0,1\}} \sum_i{g_i(m)e^{-\frac{(\mathbf{S}^T\mathbf{x} - 1000)^2}{2}}} - \lambda\left(\frac{\mathbf{d}^T\mathbf{x}}{2} - 1000\right)^2 \\	[2ex]
+				\null \\
+				\mathbf{x} \in \underset{\mathbf{x} \in \{0,1\}^N}{argmax} {\textrm{ } \sum_i{g_i(m)e^{-\frac{(\mathbf{S}^T\mathbf{x} - 1000)^2}{2}}} - \lambda\left(\frac{\mathbf{d}^T\mathbf{x}}{2} - 1000\right)^2} \\[3ex]
 				\textrm{such that:}\\[0.5ex]	
 				\sum_i{g_i(m)x_i} \le F\\[0.5ex]		
 				0  < g_i(m) \le min(m, \Omega) \textrm{ } \forall i \textrm{ s.t. } x_i  = 1 \textrm{,   0 otherwise}
 				\null \\[2ex]
 			\end{array}
-			$
+			$$
 		}\\
 		\hline
 	\end{tabular}
