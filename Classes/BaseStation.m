@@ -129,8 +129,67 @@ classdef BaseStation < handle
         function mem = get_mem_for_UE(BS, BS_per_km)
 %             %at this point the station is offering a certain amount of space for the UE. 
 %             %It need not be the case the BS will actually receive the file
+           
+            v = BS.sharedData.UE.m_vel * 3.6;
+            if BS_per_km <= 5
+                a = 2.7;
+            elseif BS_per_km <= 7
+                a = 2.7;
+            else
+                a = 2.2;
+            end
+            if v < 90
+                if BS_per_km <= 5
+                    a = 1.8;
+                elseif BS_per_km <= 7
+                    a = 1.8;
+                else
+                    a = 1.8;
+                end
+            elseif v < 100
+                if BS_per_km <= 5
+                    a = 1.8;
+                elseif BS_per_km <= 7
+                    a = 1.8;
+                else
+                    a = 1.8;
+                end
+            elseif v < 110
+                if BS_per_km <= 5
+                    a = 1.8;
+                elseif BS_per_km <= 7
+                    a = 1.8;
+                else
+                    a = 2;
+                end
+            elseif v < 120 
+                if BS_per_km <= 5
+                    a = 1.5;
+                elseif BS_per_km <= 7
+                    a = 1.5;
+                else
+                    a = 1.5;
+                end
+            elseif v < 130 
+                if BS_per_km <= 5
+                    a = 1.5;
+                elseif BS_per_km <= 7
+                    a = 1.7;
+                else
+                    a = 1.6;
+                end
+            elseif v < 140
+               if BS_per_km <= 5
+                    a = 1.7;
+                elseif BS_per_km <= 7
+                    a = 1.7;
+                else
+                    a = 1.5;
+               end
+            end
+            
             mean_conn_time = (1000/BS_per_km) / BS.sharedData.UE.m_vel;
-            mem = int64( BS.sharedData.UE.requested_rate * 2 * mean_conn_time * 1e9 ) ; %[bits]                        
+            mem = int64( BS.sharedData.UE.requested_rate * a * mean_conn_time * 1e9 ) ; %[bits]                        
             
             if mem < 0 %should never happen (just avoid eventual bugs)
                 mem = 0;

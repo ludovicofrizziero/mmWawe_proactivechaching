@@ -85,11 +85,12 @@ classdef UserEquipment < handle
             UE.hist_index = int32(sim_time/dt); % #iteration we're at
             
             if mod(sim_time, 1.0) < 1e-9
-                a = randn(1) * 10;
-                if a < -10
-                    a = -10;
-                elseif a > 10
-                    a = 10;
+                a_max = 5;
+                a = randn(1) * a_max;
+                if a < -a_max
+                    a = -a_max;
+                elseif a > a_max
+                    a = a_max;
                 end
 
                 UE.acc = a;

@@ -89,8 +89,8 @@ for v = vels
     end
 end
 
-symbols = {'b-*', 'r-^', 'g-o', 'k-x'}; %for functions
-colors = {'b:', 'r:', 'g:', 'k:'}; %for Conf. Interv.
+symbols = {'b-*', 'r-^', 'k-o', 'g-x'}; %for functions
+colors = {'b:', 'r:', 'k:', 'g:'}; %for Conf. Interv.
 
 %% lost memory
 figure;
@@ -115,6 +115,7 @@ figure;
 title('average cumulative wait time')
 hold on
 grid on
+legend_subset = [];
 for i = 1:min(size(out))
     y = [];
     ci = [];
@@ -122,12 +123,13 @@ for i = 1:min(size(out))
         y = [y; out{j, i}.mean_time];
         ci = [ci; out{j, i}.CI_time];
     end
-    plot(vels, y, symbols{i}, vels, ci(:, 1), colors{i}, vels, ci(:, 2), colors{i});
+    h = plot(vels, y, symbols{i}, vels, ci(:, 1), colors{i}, vels, ci(:, 2), colors{i});
+    legend_subset(i) = h(1);
 end
 hold off
 xlabel('velocity [Km/h]');
 ylabel('[s]');
-legend('Custom', 'Random1', 'Random2');
+legend(legend_subset, 'Custom', 'Random1', 'Random2');
 %%
 
 %% leftover mem at bs

@@ -42,7 +42,7 @@ d_R = 2.5;
 W_L = 3.75; % lane width
 N_0 = 3; % # of obstacle lanes per direction
 R = d_R + N_0*W_L; % road width
-BS_per_km = 10;
+BS_per_km = 7; %BSs' *expected* density. Just for one row (top/bottom) -> actual density is 2*BS_per_km
 
 %% parameters for simulation
 n_rep_PL = 300; % number of repetition per choice of parameters
@@ -54,7 +54,8 @@ T_tracking = 0.1; % tracking periodicity for BF vector [s]
 T_mul_users_update = 1; %how often BSs change n of connected users 
 t_H = 0.3; % udpate of channel instances
 n_users = 25; % mean number of users per BS, poisson r.v.
-alloc_func = {@custom_solver3; @random_allocation3; @random_allocation1};
+alloc_func = {@custom_solver3; @random_allocation3; @random_allocation1}
+
 
 DEBUG = n_rep_PL < 2;
 SAVE_DATA_VERBOSE = true;
