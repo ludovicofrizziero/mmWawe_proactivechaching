@@ -16,7 +16,7 @@ function [X, chunks, ok] = custom_solver3(allBS, UE, BS_per_km, DEBUG)
         fprintf('chunks size:\n\torig:\t\t%2.3f GB \n\tconstr.:\t%2.3f GB \n\tue buff:\t%2.3f GB\n', tmp1/8e9,  tmp2/8e9, tmp3/8e9);
     end
     
-    S = (double(chunks)/1e9) * UE.vel / UE.requested_rate; % [meters]
+    S = (double(chunks)/1e9) * UE.m_vel / UE.requested_rate; % [meters]
      
     b = double(chunks)/1e9;
     X = zeros(N,1);
@@ -59,11 +59,7 @@ function [X, chunks, ok] = custom_solver3(allBS, UE, BS_per_km, DEBUG)
                 best_i = i;
 %                 best_d = d;
             end
-        end
-        
-        if DEBUG && best_i > 0
-            fprintf('%d ', allBS{best_i}.ID);
-        end
+        end               
             
         if (best_i > 0)
             X(best_i) = 1;
@@ -81,14 +77,18 @@ function [X, chunks, ok] = custom_solver3(allBS, UE, BS_per_km, DEBUG)
     if ok
         I = X' * X; 
         for i = (find(X))'
-            chunks(i) = int64( (1050 * UE.requested_rate / (I * UE.m_vel)) * 1e9 );
+            chunks(i) = int64( (1000 * UE.requested_rate / (I * UE.m_vel)) * 1e9 );
         end
     end
 
     
     %% for debug, plot BS disposition
     if DEBUG
-        S = (double(chunks)/1e9) * UE.vel / UE.requested_rate; % [meters]
+        
+        for i = (find(X))'
+            fprintf('%d ', allBS{i}.ID);
+        end
+        S = (double(chunks)/1e9) * UE.m_vel / UE.requested_rate; % [meters]
         figure;
         hold on;
         grid on;

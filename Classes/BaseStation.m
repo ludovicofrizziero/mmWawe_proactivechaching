@@ -186,7 +186,7 @@ classdef BaseStation < handle
                 else
                     a = 1.5;
                end
-            end
+            end           
             
             mean_conn_time = (1000/BS_per_km) / BS.sharedData.UE.m_vel;
             mem = int64( BS.sharedData.UE.requested_rate * a * mean_conn_time * 1e9 ) ; %[bits]                        
@@ -298,8 +298,8 @@ classdef BaseStation < handle
         end                     
                 
         function compute_signal_power(BS)
-            P_tx = 0.5; %Transmitting power [Watt]
-            BS.signal_power_at_ue = P_tx * abs((BS.sharedData.UE.BF)' * ((BS.C) * (BS.BF) + BaseStation.cnoise(BS.sharedData.UE.ant_arr, 0.01)) )^2 / BS.PL;
+            P_tx = 0.5; %Transmitting power [Watt]            
+            BS.signal_power_at_ue = P_tx * abs((BS.sharedData.UE.BF)' * ((BS.C) * (BS.BF) + BaseStation.cnoise(BS.sharedData.UE.ant_arr, 0.01)) )^2 / BS.PL;            
         end
     end
     

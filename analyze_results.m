@@ -172,7 +172,6 @@ legend('Custom', 'Random1', 'Random2');
 %% QoS, WARNING: THIS IS ONLY A SKETCH IDEA
 
 %QoS: evaluate average UE buffer usage (ideal should be around 50-75% ???)
-colors = {'b:', 'r:', 'g:', 'k:'};
 out_buff = cell(1,1);
 for v = vels
     vel = num2str(v);

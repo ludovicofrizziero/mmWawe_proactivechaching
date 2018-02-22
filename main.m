@@ -42,10 +42,10 @@ d_R = 2.5;
 W_L = 3.75; % lane width
 N_0 = 3; % # of obstacle lanes per direction
 R = d_R + N_0*W_L; % road width
-BS_per_km = 7; %BSs' *expected* density. Just for one row (top/bottom) -> actual density is 2*BS_per_km
+BS_per_km = 5; %BSs' *expected* density. Just for one row (top/bottom) -> actual density is 2*BS_per_km
 
 %% parameters for simulation
-n_rep_PL = 300; % number of repetition per choice of parameters
+n_rep_PL = 1; % number of repetition per choice of parameters
 theta_out = -5; %SINR outage threshold [dB]
 outage_thresh = 10^(theta_out/10); %SINR outage threshold
 % T_sim = floor(1000/v); % simulation duration [s]
@@ -68,7 +68,7 @@ fprintf('Going to delete all previous results and start a new batch of simulatio
 if ~DEBUG
     pause();
 end
-delete('RESULTS//savings*');
+delete('RESULTS//savings_v*');
 global_start = tic;
 for v = (70:10:130)/3.6 %set of velocities for the ue [m/s]  
 %     [n_BS_top, n_BS_bottom, pos_top, pos_bottom] = deploy_bs(BS_per_km, road_length, R);
@@ -81,7 +81,7 @@ for v = (70:10:130)/3.6 %set of velocities for the ue [m/s]
             rate_tmp = cell(n_rep_PL, 1);        
             savings = cell(n_rep_PL, 1);
             tic; 
-            parfor iter = 1:n_rep_PL                                       
+            for iter = 1:n_rep_PL                                       
                 ue_r = (0.15 - 0.06) * rand(1) + 0.06; %Gbit/s
                 start_ue_pos = [0, d_R + randi(3,1)*W_L - W_L/2, 0]; %(x,y,z) position of UE
                 shared_data = BaseStation.sharedData;
@@ -94,7 +94,8 @@ for v = (70:10:130)/3.6 %set of velocities for the ue [m/s]
                 allBS = [];
                 X = [];
                 chunks = [];
-                while ~ok
+                n_retry = 0;
+                while ~ok && n_retry < 100
                     [n_BS_top, n_BS_bottom, pos_top, pos_bottom] = deploy_bs(BS_per_km, road_length, R);
 
                     allBS = cell(n_BS_top + n_BS_bottom, 1);
@@ -114,7 +115,8 @@ for v = (70:10:130)/3.6 %set of velocities for the ue [m/s]
 
                     %% allocate file to BS
                     [X, chunks, ok] = alloc_func{alloc_func_idx}(allBS, UE, BS_per_km, DEBUG); %max(n_BS_bottom, n_BS_top), DEBUG);
-                    %%                                         
+                    %%     
+                    n_retry = n_retry + 1;
                 end
 
                 for i = 1:size(X)
@@ -132,10 +134,11 @@ for v = (70:10:130)/3.6 %set of velocities for the ue [m/s]
                 rate = zeros(length(sim_steps), 1);
                 servingBS_IDs = zeros(length(sim_steps), 1);
                 for t = sim_steps 
-                    
                     distance_handover(allBS, shared_data); 
 %                     power_handover(allBS, shared_data); 
-
+                    if t > 0.1 * 100
+                            hello_there = 0;
+                        end
                     UE.update(t, dt);
 
                     for i = 1:length(allBS)
@@ -189,7 +192,7 @@ for v = (70:10:130)/3.6 %set of velocities for the ue [m/s]
                     s.ue_lost_data = ue_lost_data;
                     s.ue_waiting_time = ue_waiting_time;
                     s.ue_requested_rate = UE.requested_rate;
-                    s.ue_velocity = UE.vel;
+                    s.ue_velocity = UE.m_vel;
                     s.rate = rate;
                     s.servingBS_IDs = servingBS_IDs;
                     s.BSs_pos = BSs_pos;

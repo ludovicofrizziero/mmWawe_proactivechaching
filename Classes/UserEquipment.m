@@ -25,7 +25,6 @@ classdef UserEquipment < handle
         vel
         m_vel
         acc
-        curr_vel
         AoD
         AoA
         requested_rate
@@ -65,8 +64,8 @@ classdef UserEquipment < handle
             end
 %             M = 1e9 * 8;   %[bits] mean
 %             V = 350e6 * 8; %[bits] variance            
-            UE.requested_file_size = 8e9; % 1 GByte % int64(sum(lognrnd(log(M^2/sqrt(V+M^2)), sqrt(log(V/M^2 + 1))))); 
-            UE.max_buffer = int64(UE.requested_rate * 15 * 1e9); %[bits] allow for up to 10 sec of buffering
+            UE.requested_file_size = 8e12; % 1000 GByte, high purposely
+            UE.max_buffer = int64(UE.requested_rate * 20 * 1e9); %[bits] allow for up to 10 sec of buffering
             UE.buffer = int64(1); %else wait_time is wrongly updated at the very first step            
             
             UE.buffer_hist = zeros(data_length, 1);
@@ -80,12 +79,33 @@ classdef UserEquipment < handle
             UE.BF.update_state(UE.AoA);
         end
         
+        function state = save_state(UE)
+            state = struct();
+            state.vel = UE.vel;
+            state.m_vel = UE.m_vel;
+            state.acc = UE.acc;
+            state.max_buffer = UE.max_buffer;
+            state.requested_rate = UE.requested_rate;
+            state.buffer = UE.buffer;
+            state.requested_file_size = UE.requested_file_size;
+        end
+        
+        function load_state(UE, state)
+            UE.vel = state.vel ;
+            UE.m_vel = state.m_vel;
+            UE.acc = state.acc;
+            UE.max_buffer = state.max_buffer;
+            UE.requested_rate = state.requested_rate;
+            UE.buffer = state.buffer;
+            UE.requested_file_size = state.requested_file_size;
+        end
+        
         function update(UE, sim_time, dt)
             
             UE.hist_index = int32(sim_time/dt); % #iteration we're at
             
             if mod(sim_time, 1.0) < 1e-9
-                a_max = 5;
+                a_max = 10;
                 a = randn(1) * a_max;
                 if a < -a_max
                     a = -a_max;
@@ -140,11 +160,15 @@ classdef UserEquipment < handle
             end
         end
         
-        function [ue_buffer, ue_max_buffer, ue_lost_data, ue_waiting_time] = dump_data(UE)
-            ue_buffer = UE.buffer_hist;
+        function [ue_buffer, ue_max_buffer, ue_lost_data, ue_waiting_time] = dump_data(UE, varargin)
+            trim_data = length(UE.buffer_hist);
+            if nargin > 1
+                trim_data = int32(round(varargin{1}));
+            end
+            ue_buffer = UE.buffer_hist(1:trim_data, :);
             ue_max_buffer = UE.max_buffer;
-            ue_lost_data = UE.lost_data_hist;
-            ue_waiting_time = UE.wait_time_hist;
+            ue_lost_data = UE.lost_data_hist(1:trim_data, :);
+            ue_waiting_time = UE.wait_time_hist(1:trim_data, :);
         end
     end
     
@@ -153,7 +177,7 @@ classdef UserEquipment < handle
             %for reference see DOC/BeamForming/angles.jpg
             
             %change point of view from the world origin to the BS's system
-            new_ue_pos = UE.pos - UE.sharedData.servingBS.pos;    
+            new_ue_pos = UE.pos - UE.sharedData.servingBS.pos;  
             new_ue_pos = new_ue_pos / norm(new_ue_pos);
             
             theta = acos(dot(-new_ue_pos(1:2), [1, 0])); %only xy coords 
@@ -163,13 +187,13 @@ classdef UserEquipment < handle
             
             %find azimut angle (with respect to y axis, positive toward x axis)            
             if theta <= pi/2 && s > 0 
-                UE.AoA = [theta, phi];
+                UE.AoA = [-theta, phi]; %+
             elseif theta <= pi/2 && s < 0
-                UE.AoA = [-theta, phi];
+                UE.AoA = [theta, phi]; %-
             elseif theta >= pi/2 && s > 0
-                UE.AoA = [theta, phi];
+                UE.AoA = [-theta, phi]; %+
             elseif theta >= pi/2 && s < 0
-                UE.AoA = [-theta, phi];
+                UE.AoA = [theta, phi]; %-
             end           
         end
     end

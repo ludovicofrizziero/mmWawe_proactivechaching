@@ -21,7 +21,7 @@ function [X, chunks, ok] = random_allocation1(allBS, UE, BS_per_km, DEBUG)
         i = randi(N);
         X(i) = 1;   
         iter = iter + 1;
-        if iter == N
+        if iter >= N
             break; %to avoid bugs
         end
     end      

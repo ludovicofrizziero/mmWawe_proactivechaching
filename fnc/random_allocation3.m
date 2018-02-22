@@ -15,7 +15,7 @@ function [X, chunks, ok] = random_allocation3(allBS, UE, BS_per_km, DEBUG)
         fprintf('chunks size:\n\torig:\t\t%2.3f GB \n\tue buff:\t%2.3f GB\n', tmp1/8e9, tmp3/8e9);
     end
         
-    S = (double(chunks)/1e9) * UE.vel / UE.requested_rate; % [meters]
+    S = (double(chunks)/1e9) * UE.m_vel / UE.requested_rate; % [meters]
         
     X = zeros(N,1);
     iter = 1;
@@ -23,7 +23,7 @@ function [X, chunks, ok] = random_allocation3(allBS, UE, BS_per_km, DEBUG)
         i = randi(N);
         X(i) = 1;   
         iter = iter + 1;
-        if iter == N
+        if iter >= N
             break; %to avoid bugs
         end
     end      
@@ -41,7 +41,7 @@ function [X, chunks, ok] = random_allocation3(allBS, UE, BS_per_km, DEBUG)
     
     %% for debug, plot BS disposition
     if DEBUG
-        S = (double(chunks)/1e9) * UE.vel / UE.requested_rate; % [meters]
+        S = (double(chunks)/1e9) * UE.m_vel / UE.requested_rate; % [meters]
         figure;
         hold on;
         grid on;
