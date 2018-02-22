@@ -45,7 +45,7 @@ R = d_R + N_0*W_L; % road width
 BS_per_km = 7; %BSs' *expected* density. Just for one row (top/bottom) -> actual density is 2*BS_per_km
 
 %% parameters for simulation
-n_rep = 4; % number of repetition per choice of parameters
+n_rep = 20; % number of repetition per choice of parameters
 n_km = 20;
 theta_out = -5; %SINR outage threshold [dB]
 outage_thresh = 10^(theta_out/10); %SINR outage threshold

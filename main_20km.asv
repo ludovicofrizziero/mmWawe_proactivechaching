@@ -45,8 +45,8 @@ R = d_R + N_0*W_L; % road width
 BS_per_km = 7; %BSs' *expected* density. Just for one row (top/bottom) -> actual density is 2*BS_per_km
 
 %% parameters for simulation
-n_rep = 4; % number of repetition per choice of parameters
-n_km = 5;
+n_rep = 20; % number of repetition per choice of parameters
+n_km = 20;
 theta_out = -5; %SINR outage threshold [dB]
 outage_thresh = 10^(theta_out/10); %SINR outage threshold
 % T_sim = floor(1000/v); % simulation duration [s]
@@ -59,7 +59,6 @@ alloc_func = {@custom_solver3; @random_allocation3}
 
 
 DEBUG = n_rep < 2;
-DEBUG = false;
 SAVE_DATA_VERBOSE = true;
 
 %% deploy BS
@@ -82,7 +81,7 @@ for v = (70:10:130)/3.6 %set of velocities for the ue [m/s]
             %% %%%%%%%%%%%%%%%%%%%%%%% Monte Carlo Method %%%%%%%%%%%%%%%%%%%%%%%%%%                    
             savings = cell(n_rep, n_km);
             tic; 
-            for iter = 1:n_rep
+            parfor iter = 1:n_rep
                 ue_state = struct();
                 for km = 1:n_km
                     ue_r = (0.15 - 0.06) * rand(1) + 0.06; %Gbit/s
@@ -171,8 +170,7 @@ for v = (70:10:130)/3.6 %set of velocities for the ue [m/s]
                         r = shared_data.servingBS.BW * log2(1+SINR) / shared_data.servingBS.n; 
                         if r < 0.15e9
                             r = 0.15e9; %there a bug, this is a fast getaround. Between t = 5 a,d t = 18.8 rate si almost always 0 for unknown reasons
-                                        %This is not the case in main.m. No
-                                        %clue wa
+                                        %This is not the case in main.m. No clue watsoever as to why it happens.
                         end
                         f_chunk = shared_data.servingBS.download_file(dt, r);
                         UE.receive_file_chunk(f_chunk);
