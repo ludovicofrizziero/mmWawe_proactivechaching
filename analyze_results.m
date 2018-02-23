@@ -94,7 +94,7 @@ colors = {'b:', 'r:', 'k:', 'g:'}; %for Conf. Interv.
 
 %% lost memory
 figure;
-title('average lost data');
+title('Average lost data due to buffer overflow');
 hold on
 grid on
 for i = 1:min(size(out))
@@ -105,14 +105,14 @@ for i = 1:min(size(out))
     plot(vels, y / 8e6, symbols{i});
 end
 hold off
-xlabel('velocity [Km/h]');
+xlabel('velocity [km/h]');
 ylabel('[MBytes]');
-legend('Custom', 'Random1', 'Random2');
+legend('Custom', 'Random 1', 'Random 2');
 %%
 
 %% wait time
 figure;
-title('average cumulative wait time')
+title('Average cumulative wait time')
 hold on
 grid on
 legend_subset = [];
@@ -129,12 +129,12 @@ end
 hold off
 xlabel('velocity [Km/h]');
 ylabel('[s]');
-legend(legend_subset, 'Custom', 'Random1', 'Random2');
+legend(legend_subset, 'Custom', 'Random 1', 'Random 2');
 %%
 
 %% leftover mem at bs
 figure;
-title('average leftover data at bs')
+title('Average leftover data at BSs')
 hold on
 grid on
 for i = 1:min(size(out))
@@ -147,7 +147,7 @@ end
 hold off
 xlabel('velocity [Km/h]');
 ylabel('[MBytes]');
-legend('Custom', 'Random1', 'Random2');
+legend('Custom', 'Random 1', 'Random 2');
 %%
 
 % figure;
@@ -196,7 +196,7 @@ for v = vels
 end
 
 figure;
-title('UE buffer average load')
+title('UE''s buffer average load')
 hold on
 grid on
 max_buff = double(s.ue_max_buffer);
@@ -216,14 +216,14 @@ plot([vels(1), vels(end)], ones(2,1))
 plot(vels(1), 1.1); % just to show better the max load line
 hold off
 % grid off
-xlabel('velocity [Km/h]');
+xlabel('velocity [km/h]');
 ylabel('Buffer load [%]');
-legend(legend_subset, 'Custom', 'Random1', 'Random2', 'Ideal load', 'Max load');
+legend(legend_subset, 'Custom', 'Random 1', 'Random 2', 'Ideal load', 'Max load');
 
 
 
 figure;
-title('QoS averaged for all velocities ');
+title('QoS averaged for all velocities');
 legend_subset = [];
 for func = 1:min(size(out))    
     hold on;
@@ -240,29 +240,20 @@ for func = 1:min(size(out))
         y = [y; mean(tmp)];       
         ci = [ci; ConfIntervals(tmp)];
     end
-    h = plot(vels, 1 - y, symbols{func}, vels, 1- ci(:, 1), colors{func}, vels, 1-ci(:, 2), colors{func});  
+    y = max(y, 0);
+    h = plot(vels, 1 - y, symbols{func}, vels, 1 - ci(:, 1), colors{func}, vels, 1 - ci(:, 2), colors{func});  
     legend_subset(func) = h(1);
     hold off;
+    
+    if func == 1
+        QoS = struct();
+        QoS.qos = 1 - y;
+        QoS.vels = vels;
+        QoS.CI = ci;
+        save('RESULTS//QoS.mat', 'QoS');
+    end
 end
-xlabel('Velocity [Km/h]');
-ylabel('QoS');
-legend(legend_subset, 'Custom', 'Random1', 'Random2', 'Location', 'southeast');
-%%
-
-%% QoS
-% for func = 1:3
-%     figure;
-%     title(strcat('QoS for func ', num2str(func)));
-%     a = 0.01:0.01:1;
-%     hold on;
-%     for vel = 1:max(size(out))
-%         lost = out{vel,func}.mean_lost / 0.068 + out{vel, func}.mean_mem / 0.068;
-%         wait = out{vel,func}.mean_time;
-% 
-%         y = (a * 1 / wait + (1-a)* 1 / lost);
-%         plot(a, y);
-%     end
-%     legend('70 Km/h', '80 Km/h', '90 Km/h', '100 Km/h', '110 Km/h', '120 Km/h', '130 Km/h');
-%     hold off;
-% end
+xlabel('Velocity [km/h]');
+ylabel('QoS [%]');
+legend(legend_subset, 'Custom', 'Random 1', 'Random 2', 'Location', 'southeast');
 %%

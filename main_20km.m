@@ -45,7 +45,7 @@ R = d_R + N_0*W_L; % road width
 BS_per_km = 7; %BSs' *expected* density. Just for one row (top/bottom) -> actual density is 2*BS_per_km
 
 %% parameters for simulation
-n_rep = 20; % number of repetition per choice of parameters
+n_rep = 50; % number of repetition per choice of parameters
 n_km = 20;
 theta_out = -5; %SINR outage threshold [dB]
 outage_thresh = 10^(theta_out/10); %SINR outage threshold
@@ -71,7 +71,7 @@ if ~DEBUG
 end
 delete('RESULTS//savings20km_v*');
 global_start = tic;
-for v = (70:10:130)/3.6 %set of velocities for the ue [m/s]  
+for v = (120:10:130)/3.6 %set of velocities for the ue [m/s]  
 %     [n_BS_top, n_BS_bottom, pos_top, pos_bottom] = deploy_bs(BS_per_km, road_length, R);
 %     for ue_r = 0.068 %[0.016, 0.045, 0.068] %set of rates for the ue [Gbit/s]        
         for alloc_func_idx = 1:max(size(alloc_func))

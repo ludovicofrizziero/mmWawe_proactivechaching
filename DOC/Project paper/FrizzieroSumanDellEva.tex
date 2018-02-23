@@ -72,7 +72,6 @@
 
 \usepackage{placeins}
 
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{document}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -85,6 +84,11 @@
 }}
 
 \maketitle
+
+%% enable page numbering %%
+%\thispagestyle{plain}
+%\pagestyle{plain}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \begin{abstract}
 This is a template for a scientific research paper. The abstract is a super brief summary of what you do in the paper.
@@ -112,7 +116,7 @@ The Related Work section contains an analysis of the most relevant related liter
 
 \begin{figure*}
 	\centering
-	\includegraphics{placeholder.png}
+	\includegraphics[width=18cm, height=10cm]{placeholder.png}
 	\caption{representation of the highway sector.}
 	\label{fig:highway_sector}
 \end{figure*}
@@ -198,7 +202,7 @@ Finally, it is also necessary to evenly distribute the chosen BSs along the sect
 
 \begin{figure}[t]
 	\centering
-	\includegraphics{placeholder.png}
+	\includegraphics[width=9cm]{BS_distance.png}
 	\caption{representation of minimum distances from [eq. \ref{eq:dists}] }
 	\label{fig:min_dists}
 \end{figure}
@@ -220,17 +224,17 @@ The proposed optimization problem therefore is
 		\hline
 		OPTIMIZATION PROBLEM \\
 		\hline
-		\vbox{
-			$$			
+		\makebox[8.6cm]{
+			$			
 			\begin{array}{l l l l l l}
 				\null \\
-				\mathbf{x} \in \underset{\mathbf{x} \in \{0,1\}^N}{argmax} {\textrm{ } \sum_i{g_i(m)e^{-\frac{(\mathbf{S}^T\mathbf{x} - 1000)^2}{2}}} - \lambda\left(\frac{\mathbf{d}^T\mathbf{x}}{2} - 1000\right)^2} \\[3ex]
+				\mathbf{x} \in \underset{\mathbf{x} \in \{0,1\}^N}{argmax} {\textrm{ } \sum_i{g_i(m)x_ie^{-\frac{(\mathbf{S}^T\mathbf{x} - 1000)^2}{2}}} - \lambda\left(\frac{\mathbf{d}^T\mathbf{x}}{2} - 1000\right)^2} \\[3ex]
 				\textrm{such that:}\\[0.5ex]	
 				\sum_i{g_i(m)x_i} \le F\\[0.5ex]		
 				0  < g_i(m) \le min(m, \Omega) \textrm{ } \forall i \textrm{ s.t. } x_i  = 1 \textrm{,   0 otherwise}
 				\null \\[2ex]
 			\end{array}
-			$$
+			$
 		}\\
 		\hline
 	\end{tabular}
@@ -250,10 +254,11 @@ S_i = \mathbb{E}{[\delta_{i, j}| \mathbf{x}]} =  \frac{1000}{\textrm{ }||\mathbf
 
 The expression $||\cdot||_0$ is the zero norm of a binary vector. The discussion made so far presents the solution that best maximizes our optimization problem given the geometric assumption it relies on. It is nonetheless possible to lessen the uniform constraint over $m$, or over $g(\cdot)$, but the solution becomes suboptimal. 
 
-Finally we provide the pseudocode that solves the optimization problem in Algorithm 1
+Finally we provide the pseudocode that solves the optimization problem in [Alg. \ref{alg:solver}], that runs approximately in $O(N^4)$ due to the update on $\mathbf{d}$. At first it solves the optimization problem by considering the requested amount $m$ for each BS. This way an optimal number of stations is selected, then it applies $g(\cdot)$ in order to minimizes support regions overlapping, while also maximizing the exponential to 1 as a (desired) byproduct.
 
 \begin{algorithm}
 	\caption{pseudocode to solve the optimization problem}
+	\label{alg:solver}
 	\begin{algorithmic}
 		\STATE \textbf{Input:} $\mathbf{m} \in \{0, m\}^N, \textrm{ } F$, positions of each BS with respect to the world
 		\STATE \textbf{Output:} $\mathbf{x} \in \{0, 1\}^N, \textrm{ } g(\mathbf{m}) \in \{0, g_i(m)\}^N$
@@ -286,12 +291,42 @@ Finally we provide the pseudocode that solves the optimization problem in Algori
 \end{algorithm}
 
 
-Algorithm 1, that runs approximately in $O(N^4)$ due to the update on $\mathbf{d}$, at first solves the optimization problem by considering the requested amount $m$ for each BS. This way an optimal number of stations is selected, then it applies $g(\cdot)$ in order to minimizes support regions overlapping, while also maximizing the exponential to 1 as a (desired) byproduct.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Results}\label{sec:res}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-The Results section contains a selection of the most relevant results with the explanation of their meaning. Please, not that you do NOT have to describe the shape of the curves that can be seen in the figures, but the reasons WHY such curves have that shape!
+
+blablablablablablabla
+
+
+\begin{figure*}[t]
+	\label{fig:7BS_all_stats}
+	\centering
+	\includegraphics[width=9cm]{QoS.png} \includegraphics[width=9cm]{UE_wait_time.png}
+	\includegraphics[width=9cm]{UE_buffer_overflow.png} \includegraphics[width=9cm]{BS_leftover_data.png}
+	\caption{Statistics for a sector with density of 14 BS. Confidence Intervals at 0.05\% are shown were relevant.}
+\end{figure*}
+
+\begin{figure}[b]
+	\label{fig:7BS_buffer_load}
+	\centering
+	\includegraphics[width=9cm]{UE_buffer.png}
+	\caption{Buffer load at UE side, for 14 BS per sector. Confidence intervals are at 0.05\%.}
+\end{figure}
+
+\begin{figure}[b]
+	\label{fig:QoS_all}
+	\centering
+	\includegraphics[width=9cm]{QoS_10-14-20-BS_densities.png}
+	\caption{QoS for densities of 10, 14 and 20 BS per sector. Confidence intervals are at 0.05\%.}
+\end{figure}
+
+\begin{figure*}
+	\label{fig:QoS_20km}
+	\centering
+	\includegraphics[width=12cm]{placeholder.png}
+	\caption{QoS for 20km long journey, 14 BS per sector. Confidence intervals are at 0.05\%.}
+\end{figure*}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Conclusions}\label{sec:conclusion}

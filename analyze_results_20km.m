@@ -74,7 +74,7 @@ end
 hold off
 xlabel('velocity [Km/h]');
 ylabel('[MBytes]');
-legend('Custom', 'Random1', 'Random2');
+legend('Custom', 'Random 1', 'Random 2');
 %%
 
 %% wait time
@@ -96,7 +96,7 @@ end
 hold off
 xlabel('velocity [Km/h]');
 ylabel('[s]');
-legend(legend_subset, 'Custom', 'Random1', 'Random2');
+legend(legend_subset, 'Custom', 'Random 1', 'Random 2');
 %%
 
 %% leftover mem at bs
@@ -114,7 +114,7 @@ end
 hold off
 xlabel('velocity [Km/h]');
 ylabel('[MBytes]');
-legend('Custom', 'Random1', 'Random2');
+legend('Custom', 'Random 1', 'Random 2');
 %%
 
 % figure;
@@ -190,7 +190,7 @@ legend('Custom', 'Random1', 'Random2');
 
 
 figure;
-title('QoS averaged for all velocities ');
+title('QoS for 20km averaged for all velocities');
 legend_subset = [];
 for func = 1:min(size(out))    
     hold on;
@@ -207,13 +207,14 @@ for func = 1:min(size(out))
         y = [y; mean(tmp)];       
         ci = [ci; ConfIntervals(tmp)];
     end
-    h = plot(vels, 1 - y, symbols{func}, vels, 1- ci(:, 1), colors{func}, vels, 1-ci(:, 2), colors{func});  
+    y = max(y, 0);
+    h = plot(vels, 1 - y, symbols{func}, vels, 1 - ci(:, 1), colors{func}, vels, 1 - ci(:, 2), colors{func});  
     legend_subset(func) = h(1);
     hold off;
 end
-xlabel('Velocity [Km/h]');
-ylabel('QoS');
-legend(legend_subset, 'Custom', 'Random1', 'Random2', 'Location', 'southeast');
+xlabel('velocity [Km/h]');
+ylabel('QoS [%]');
+legend(legend_subset, 'Custom', 'Random 1', 'Random 2', 'Location', 'southeast');
 %%
 
 %% QoS
