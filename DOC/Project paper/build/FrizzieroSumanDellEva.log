@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.18 (MiKTeX 2.9.6350 64-bit) (preloaded format=pdflatex 2017.7.17)  25 FEB 2018 21:07
+This is pdfTeX, Version 3.14159265-2.6-1.40.18 (MiKTeX 2.9.6350 64-bit) (preloaded format=pdflatex 2017.8.7)  25 FEB 2018 12:54
 entering extended mode
 **./FrizzieroSumanDellEva.tex
 (FrizzieroSumanDellEva.tex
@@ -1531,41 +1531,7 @@ Package: booktabs 2005/04/14 v1.61803 publication quality tables
 ("C:\Program Files\MiKTeX 2.9\tex\latex\placeins\placeins.sty"
 Package: placeins 2005/04/18  v 2.2
 )
-(FrizzieroSumanDellEva.aux
-
-LaTeX Warning: Label `' multiply defined.
-
-
-LaTeX Warning: Label `' multiply defined.
-
-
-LaTeX Warning: Label `' multiply defined.
-
-
-LaTeX Warning: Label `' multiply defined.
-
-
-LaTeX Warning: Label `' multiply defined.
-
-
-LaTeX Warning: Label `' multiply defined.
-
-
-LaTeX Warning: Label `' multiply defined.
-
-
-LaTeX Warning: Label `' multiply defined.
-
-
-LaTeX Warning: Label `' multiply defined.
-
-
-LaTeX Warning: Label `' multiply defined.
-
-
-LaTeX Warning: Label `' multiply defined.
-
-)
+(FrizzieroSumanDellEva.aux)
 \openout1 = `FrizzieroSumanDellEva.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 76.
@@ -1702,77 +1668,67 @@ File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 
 
 ]
-<highway1.jpg, id=13, 1313.6578pt x 700.86844pt>
-File: highway1.jpg Graphic file (type jpg)
- <use highway1.jpg>
-Package pdftex.def Info: highway1.jpg used on input line 136.
-(pdftex.def)             Requested size: 470.91805pt x 251.24301pt.
+<placeholder.png, id=13, 28.105pt x 28.105pt>
+File: placeholder.png Graphic file (type png)
+ <use placeholder.png>
+Package pdftex.def Info: placeholder.png used on input line 136.
+(pdftex.def)             Requested size: 512.92336pt x 284.64035pt.
  [2]
-<BS_distance.png, id=25, 385.44pt x 310.15875pt>
+<BS_distance.png, id=24, 385.44pt x 310.15875pt>
 File: BS_distance.png Graphic file (type png)
  <use BS_distance.png>
-Package pdftex.def Info: BS_distance.png used on input line 243.
+Package pdftex.def Info: BS_distance.png used on input line 222.
 (pdftex.def)             Requested size: 256.0748pt x 206.05893pt.
 
-Overfull \hbox (1.87094pt too wide) in paragraph at lines 260--279
+Overfull \hbox (1.87094pt too wide) in paragraph at lines 239--258
  [] 
  []
 
-[3 <./highway1.jpg>] <QoS.png, id=34, 526.96875pt x 395.22656pt>
+[3 <./placeholder.png>] <QoS.png, id=33, 526.96875pt x 395.22656pt>
 File: QoS.png Graphic file (type png)
- <use QoS.png>
-Package pdftex.def Info: QoS.png used on input line 334.
-(pdftex.def)             Requested size: 256.0748pt x 192.06458pt.
 
-<UE_wait_time.png, id=35, 526.96875pt x 395.22656pt>
+<use QoS.png>
+Package pdftex.def Info: QoS.png used on input line 314.
+(pdftex.def)             Requested size: 256.0748pt x 192.06458pt.
+ <UE_wait_time.png, id=34, 526.96875pt x 395.22656pt>
 File: UE_wait_time.png Graphic file (type png)
- <use UE_wait_time.png>
-Package pdftex.def Info: UE_wait_time.png used on input line 334.
+
+<use UE_wait_time.png>
+Package pdftex.def Info: UE_wait_time.png used on input line 314.
 (pdftex.def)             Requested size: 256.0748pt x 192.06458pt.
 
-<UE_buffer_overflow.png, id=36, 526.96875pt x 395.22656pt>
+<UE_buffer_overflow.png, id=35, 526.96875pt x 395.22656pt>
 File: UE_buffer_overflow.png Graphic file (type png)
 
 <use UE_buffer_overflow.png>
-Package pdftex.def Info: UE_buffer_overflow.png used on input line 335.
+Package pdftex.def Info: UE_buffer_overflow.png used on input line 315.
 (pdftex.def)             Requested size: 256.0748pt x 192.06458pt.
 
-<BS_leftover_data.png, id=37, 526.96875pt x 395.22656pt>
+<BS_leftover_data.png, id=36, 526.96875pt x 395.22656pt>
 File: BS_leftover_data.png Graphic file (type png)
 
 <use BS_leftover_data.png>
-Package pdftex.def Info: BS_leftover_data.png used on input line 335.
+Package pdftex.def Info: BS_leftover_data.png used on input line 315.
 (pdftex.def)             Requested size: 256.0748pt x 192.06458pt.
  [4 <./BS_distance.png>]
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
- [5 <./QoS.png (PNG copy)> <./UE_wait_time.png (PNG copy)> <./UE_buffer_overflo
-w.png (PNG copy)> <./BS_leftover_data.png (PNG copy)>]
-<UE_buffer.png, id=49, 526.96875pt x 395.22656pt>
+<UE_buffer.png, id=45, 526.96875pt x 395.22656pt>
 File: UE_buffer.png Graphic file (type png)
  <use UE_buffer.png>
-Package pdftex.def Info: UE_buffer.png used on input line 371.
+Package pdftex.def Info: UE_buffer.png used on input line 351.
 (pdftex.def)             Requested size: 256.0748pt x 192.06458pt.
 
-<QoS_10-14-20-BS_densities.png, id=50, 526.96875pt x 395.22656pt>
+<QoS_10-14-20-BS_densities.png, id=46, 526.96875pt x 395.22656pt>
 File: QoS_10-14-20-BS_densities.png Graphic file (type png)
 
 <use QoS_10-14-20-BS_densities.png>
-Package pdftex.def Info: QoS_10-14-20-BS_densities.png used on input line 378.
+Package pdftex.def Info: QoS_10-14-20-BS_densities.png used on input line 358.
 (pdftex.def)             Requested size: 256.0748pt x 192.06458pt.
-
-<QoS_20km.jpg, id=51, 702.625pt x 526.96875pt>
-File: QoS_20km.jpg Graphic file (type jpg)
- <use QoS_20km.jpg>
-Package pdftex.def Info: QoS_20km.jpg used on input line 385.
-(pdftex.def)             Requested size: 261.62291pt x 196.22171pt.
-
-Overfull \hbox (6.0pt too wide) in paragraph at lines 385--386
- [][] 
- []
-
-[6 <./UE_buffer.png (PNG copy)> <./QoS_10-14-20-BS_densities.png (PNG copy)> <.
-/QoS_20km.jpg>]
+File: placeholder.png Graphic file (type png)
+ <use placeholder.png>
+Package pdftex.def Info: placeholder.png used on input line 365.
+(pdftex.def)             Requested size: 341.43306pt x 341.56851pt.
+ [5 <./QoS.png (PNG copy)> <./UE_wait_time.png (PNG copy)> <./UE_buffer_overflo
+w.png (PNG copy)> <./BS_leftover_data.png (PNG copy)>]
 
 ** Conference Paper **
 Before submitting the final camera ready copy, remember to:
@@ -1784,44 +1740,39 @@ Before submitting the final camera ready copy, remember to:
  uses only Type 1 fonts and that every step in the generation
  process uses the appropriate paper size.
 
-[7
-
-] (FrizzieroSumanDellEva.aux)
-
-LaTeX Warning: There were multiply-defined labels.
-
- ) 
+[6 <./UE_buffer.png (PNG copy)> <./QoS_10-14-20-BS_densities.png (PNG copy)>]
+[7] (FrizzieroSumanDellEva.aux) ) 
 Here is how much of TeX's memory you used:
- 37329 strings out of 493323
- 881239 string characters out of 3139066
+ 37304 strings out of 493323
+ 881425 string characters out of 3139061
  1037452 words of memory out of 3000000
- 40274 multiletter control sequences out of 15000+200000
- 638903 words of font info for 137 fonts, out of 3000000 for 9000
+ 40257 multiletter control sequences out of 15000+200000
+ 635803 words of font info for 125 fonts, out of 3000000 for 9000
  1141 hyphenation exceptions out of 8191
- 74i,19n,128p,10395b,684s stack positions out of 5000i,500n,10000p,200000b,50000s
-{C:/Program Files/MiKTeX 2.9/fonts/enc/dvips/base/8r.enc}<C:/Program Files/Mi
-KTeX 2.9/fonts/type1/public/amsfonts/cm/cmbx10.pfb><C:/Program Files/MiKTeX 2.9
-/fonts/type1/public/amsfonts/cm/cmbx5.pfb><C:/Program Files/MiKTeX 2.9/fonts/ty
-pe1/public/amsfonts/cm/cmbx7.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/publi
-c/amsfonts/cm/cmex10.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/public/amsfon
-ts/cm/cmmi10.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cm
-mi5.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmmi6.pfb><
-C:/Program Files/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmmi7.pfb><C:/Progra
-m Files/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmmi8.pfb><C:/Program Files/M
-iKTeX 2.9/fonts/type1/public/amsfonts/cm/cmr10.pfb><C:/Program Files/MiKTeX 2.9
-/fonts/type1/public/amsfonts/cm/cmr5.pfb><C:/Program Files/MiKTeX 2.9/fonts/typ
-e1/public/amsfonts/cm/cmr7.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/public/
-amsfonts/cm/cmsy10.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/public/amsfonts
-/cm/cmsy5.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmsy7
-.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/public/amsfonts/symbols/msbm10.pf
-b><C:/Program Files/MiKTeX 2.9/fonts/type1/urw/courier/ucrr8a.pfb><C:/Program F
-iles/MiKTeX 2.9/fonts/type1/urw/times/utmb8a.pfb><C:/Program Files/MiKTeX 2.9/f
-onts/type1/urw/times/utmbi8a.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/urw/t
-imes/utmr8a.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/urw/times/utmri8a.pfb>
-
-Output written on FrizzieroSumanDellEva.pdf (7 pages, 691572 bytes).
+ 74i,19n,128p,10395b,682s stack positions out of 5000i,500n,10000p,200000b,50000s
+{C:/Program Files/MiKTeX 2.9/fonts/enc/dvips/b
+ase/8r.enc}<C:/Program Files/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmbx10.p
+fb><C:/Program Files/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmbx5.pfb><C:/Pr
+ogram Files/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmbx7.pfb><C:/Program Fil
+es/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmex10.pfb><C:/Program Files/MiKTe
+X 2.9/fonts/type1/public/amsfonts/cm/cmmi10.pfb><C:/Program Files/MiKTeX 2.9/fo
+nts/type1/public/amsfonts/cm/cmmi5.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1
+/public/amsfonts/cm/cmmi7.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/public/a
+msfonts/cm/cmr10.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/public/amsfonts/c
+m/cmr5.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmr7.pfb
+><C:/Program Files/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmsy10.pfb><C:/Pro
+gram Files/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmsy5.pfb><C:/Program File
+s/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmsy7.pfb><C:/Program Files/MiKTeX 
+2.9/fonts/type1/public/amsfonts/symbols/msbm10.pfb><C:/Program Files/MiKTeX 2.9
+/fonts/type1/urw/courier/ucrr8a.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/ur
+w/times/utmb8a.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/urw/times/utmbi8a.p
+fb><C:/Program Files/MiKTeX 2.9/fonts/type1/urw/times/utmr8a.pfb><C:/Program Fi
+les/MiKTeX 2.9/fonts/type1/urw/times/utmri8a.pfb>
+Output written on "C:\Users\Anthony\Documents\UNIVERSITA'\Telecommunication Net
+works\Proactive caching project\24-12\mmWawe_proactivechaching\DOC\Project pape
+r\build\FrizzieroSumanDellEva.pdf" (7 pages, 462495 bytes).
 PDF statistics:
- 125 PDF objects out of 1000 (max. 8388607)
+ 117 PDF objects out of 1000 (max. 8388607)
  0 named destinations out of 1000 (max. 500000)
- 58 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 53 words of extra memory for PDF output out of 10000 (max. 10000000)
 
