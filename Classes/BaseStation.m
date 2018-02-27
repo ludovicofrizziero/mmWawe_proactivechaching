@@ -13,122 +13,300 @@ classdef BaseStation < handle
         mean_n
         n
         PL %path loss to the user
-        H %channel matrix
-        H_params %stored channel matrix parameters
+        C %channel state object
         f %carrier frequency
         BW %bandwidth
         AoA
         AoD
-        %memory %for future use
+        ant_pos %all antenna positions
+        max_memory
+        memory
+        TTT %Time To Transition
     end
     
     properties
+        ID
+        lambda %length of the carrier wave
         ant_arr
         pos      
-        BF %beam forming vector
-        GAIN
+        BF %beam forming object
+        signal_power_at_ue
+        support_start
+        support_stop
     end
     
     methods
-        function BS = BaseStation(antenna_array, f, BW, position, t_H, t_tracking, mean_nusers) %constructor
+        function BS = BaseStation(ID, antenna_array, f, BW, position, t_H, t_tracking, mean_nusers) %constructor
+            BS.ID = ID;
             BS.ant_arr = antenna_array;
             BS.pos = position;
             BS.th = t_H;
             BS.tt = t_tracking;
+            BS.TTT = 1; %for init
             BS.mean_n = mean_nusers;
             BS.f = f;
-            BS.BW = BW;                                                      
+            BS.BW = BW;     
+            BS.lambda = physconst('lightspeed') / f;
+            BS.C = mmChannelModel(BW, f, 4, 2.8);            
+            d = 0.15; % (m) spacing between antenna array elements 
+            ind = 1;
+            BS.ant_pos = zeros(BS.ant_arr, 3);
+            for i = 1 : sqrt(BS.ant_arr)
+                for j = 1 : sqrt(BS.ant_arr)
+                    BS.ant_pos(ind, :) = [(i-1) * d , 0, (j-1) * d];
+                    ind = ind + 1;
+                end
+            end          
+            
+            BS.BF = MVDR_Beamforming(0.01, BS.lambda, BS.ant_pos);
+            BS.max_memory = int64(16e9 * 8); %[bits]
         end
         
         function init(BS)
             %initialization
-            BS_distance = norm(BS.sharedData.UE.pos - BS.pos);
-            BS.PL = 10.^((32.4 + 20*log10(BS_distance/1000) + 20*log10(BS.f/1e6))/10);            
-            BS.find_AoA_AoD();
-            [BS.H, BS.H_params] = compute_H_mobility(BS.f, BS.AoA, BS.AoD, BS.sharedData.UE.ant_arr, BS.ant_arr, BS.BW);
+            BS_distance = norm(BS.sharedData.UE.pos - BS.pos) / 1000;
+            BS.PL = 10.^((32.4 + 20*log10(BS_distance) + 20*log10(BS.f/1e6) + 6*randn(1))/10);
+            BS.find_AoD();            
+            BS.C.update_channel_state(BS.sharedData.UE.AoA, BS.AoD, BS.sharedData.UE.ant_pos, BS.ant_pos, true);
             
-            BS.handin();
-            if isequal(BS, BS.sharedData.servingBS)
-                BS.BF = compute_BF_vector(BS.ant_arr, BS.AoA); %steer toward user
-                BS.GAIN = (abs(conj(BS.sharedData.UE.BF) * (BS.sharedData.servingBS.H) * (BS.BF).').^2); %this station is transmitting
-            else
-                BS.BF = compute_BF_vector(BS.ant_arr, 2*pi*rand(1)); %random steering
-                BS.GAIN = (abs(conj(BS.sharedData.UE.BF) * (BS.H) * (BS.BF).').^2); %this station is interfering
+            BS.signal_power_at_ue = 1/BS.PL; %just for init
+            if isequal(BS, BS.sharedData.servingBS)                
+                BS.BF.update_state(BS.AoD);     %this station is serving                      
+            else        
+                BS.BF.update_state([2*pi*rand(1), pi*rand(1)]); %this station is interfering
             end
+            BS.compute_signal_power();
                        
-            BS.n = poissrnd(BS.mean_n);     
+            BS.n = poissrnd(BS.mean_n);                                  
+            BS.memory = 0;
         end
         
-        function update(BS, sim_time)                       
+        function update(BS, sim_time, dt)                            
             if mod(sim_time, BS.th) < 1e-10
                 %update all channel info
-                BS.find_AoA_AoD();
-                [BS.H, BS.H_params] = compute_H_mobility(BS.f, BS.AoA, BS.AoD, BS.sharedData.UE.ant_arr, BS.ant_arr, BS.BW);
+                BS.find_AoD();
+                BS.C.update_channel_state(BS.sharedData.UE.AoA, BS.AoD, BS.sharedData.UE.ant_pos, BS.ant_pos, true);
             end
             
             if mod(sim_time, BS.tt) < 1e-10
                 %update Beam Forming vector, keep channel params, update only ssf values
-                BS_distance = norm(BS.sharedData.UE.pos - BS.pos);
-                BS.PL = 10.^((32.4 + 20*log10(BS_distance/1000) + 20*log10(BS.f/1e6))/10);                
-                BS.find_AoA_AoD();
-                BS.H = compute_H_ssf(BS.f, BS.AoA, BS.AoD, BS.sharedData.UE.ant_arr, BS.ant_arr, BS.H_params, BS.BW);
-                
-                BS.handin();
-                if isequal(BS, BS.sharedData.servingBS)
-                    BS.BF = compute_BF_vector(BS.ant_arr, BS.AoA); %steer toward user
-                else
-                    BS.BF = compute_BF_vector(BS.ant_arr, 2*pi*rand(1)); %random steering
+                BS_distance = norm(BS.sharedData.UE.pos - BS.pos) / 1000; %Km
+                BS.PL = 10^((32.4 + 20*log10(BS_distance) + 20*log10(BS.f/1e6) + 6*randn(1))/10);                                    
+                BS.find_AoD();
+                BS.C.update_channel_state(BS.sharedData.UE.AoA, BS.AoD, BS.sharedData.UE.ant_pos, BS.ant_pos, false);
+
+%                 BS.handin(dt);
+                if isequal(BS, BS.sharedData.servingBS) 
+                    %% see DOC/meanconntime_bias.jpg for reference
+%                     a = pi/6; %30 deg                   
+%                     if BS.AoD(1) >= a || BS.AoD(1) >= -(pi-a) 
+                        BS.BF.update_state(BS.AoD); %UE is in useful sweep range
+%                     else
+%                         BS.BF.update_state([pi/2, BS.AoD(2)]); %UE is outside useful sweep range
+%                     end
+                else                    
+                    BS.BF.update_state([2*pi*rand(1), pi*rand(1)]);
                 end
             else
                 %don't update Beam Forming vector, keep channel params, update only ssf values
-                BS.find_AoA_AoD();
-                BS.H = compute_H_ssf(BS.f, BS.AoA, BS.AoD, BS.sharedData.UE.ant_arr, BS.ant_arr, BS.H_params, BS.BW);
+                BS.find_AoD();
+                BS.C.update_channel_state(BS.sharedData.UE.AoA, BS.AoD, BS.sharedData.UE.ant_pos, BS.ant_pos, false);
             end
+                                      
+            BS.compute_signal_power(); %this station is interfering if it is not equal to sharedData.servingBS            
             
-            if isequal(BS, BS.sharedData.servingBS)                
-                BS.GAIN = (abs(conj(BS.sharedData.UE.BF) * (BS.sharedData.servingBS.H) * (BS.BF).').^2); %this station is transmitting
-            else               
-                BS.GAIN = (abs(conj(BS.sharedData.UE.BF) * (BS.H) * (BS.BF).').^2); %this station is interfering
-            end
-            
-            if mod(sim_time, 1) < 1e10 
+            if mod(sim_time, 1) < 1e10
                 %update every 1 sec the random n of users connected to this station
-                BS.n = poissrnd(BS.mean_n); 
+                n_ = poissrnd(BS.mean_n); 
+                if n_ > 1 
+                    BS.n = n_;
+                else
+                    BS.n = 1;
+                end
             end
+        end
+        
+        function mem = get_mem_for_UE(BS, BS_per_km)
+%             %at this point the station is offering a certain amount of space for the UE. 
+%             %It need not be the case the BS will actually receive the file
+           
+            v = BS.sharedData.UE.m_vel * 3.6;
+            if BS_per_km <= 5
+                a = 2.7;
+            elseif BS_per_km <= 7
+                a = 2.7;
+            else
+                a = 2.2;
+            end
+            if v < 90
+                if BS_per_km <= 5
+                    a = 1.8;
+                elseif BS_per_km <= 7
+                    a = 1.8;
+                else
+                    a = 1.8;
+                end
+            elseif v < 100
+                if BS_per_km <= 5
+                    a = 1.8;
+                elseif BS_per_km <= 7
+                    a = 1.8;
+                else
+                    a = 1.8;
+                end
+            elseif v < 110
+                if BS_per_km <= 5
+                    a = 1.8;
+                elseif BS_per_km <= 7
+                    a = 1.8;
+                else
+                    a = 2;
+                end
+            elseif v < 120 
+                if BS_per_km <= 5
+                    a = 1.5;
+                elseif BS_per_km <= 7
+                    a = 1.5;
+                else
+                    a = 1.5;
+                end
+            elseif v < 130 
+                if BS_per_km <= 5
+                    a = 1.5;
+                elseif BS_per_km <= 7
+                    a = 1.7;
+                else
+                    a = 1.6;
+                end
+            elseif v < 140
+               if BS_per_km <= 5
+                    a = 1.7;
+                elseif BS_per_km <= 7
+                    a = 1.7;
+                else
+                    a = 1.5;
+               end
+            end           
+            
+            mean_conn_time = (1000/BS_per_km) / BS.sharedData.UE.m_vel;
+            mem = int64( BS.sharedData.UE.requested_rate * a * mean_conn_time * 1e9 ) ; %[bits]                        
+            
+            if mem < 0 %should never happen (just avoid eventual bugs)
+                mem = 0;
+            end
+            
+            if rand(1) < 0.05
+                %simulate the situation the BS doesn't have enougth mem for the UE
+                mem = 0; %int64(rand(1) * mem);
+            end
+        end
+        
+        function allocate_memory_for_ue(BS, mem)
+            %at this point the station has been allocated with a chunck of the file requested by the UE
+            BS.memory = mem;
+            
+            d = (((double(mem)/1e9) * BS.sharedData.UE.vel / BS.sharedData.UE.requested_rate) / 2) * 1.2;
+            BS.support_start = BS.pos(1) - d;
+            BS.support_stop = BS.pos(1) + d;
+        end
+        
+        function file_chunk = download_file(BS, dt, rate)
+            file_chunk = 0;
+            if isequal(BS, BS.sharedData.servingBS)  
+                if ~(BS.memory == 0)
+                    file_chunk = int64(round(rate * dt));
+                    BS.memory = BS.memory - file_chunk;
+                    if BS.memory < 0
+                        file_chunk = file_chunk + BS.memory;
+                        BS.memory = 0;
+                    end
+                end
+            end
+        end
+        
+        function handover(BS, to_next_BS)
+%             fprintf('handover from %d to %d;\n', BS.ID, to_next_BS.ID);
+%             fprintf('UE xpos: %3.3f\t BS xpos: %3.3f\n', BS.sharedData.UE.pos(1), to_next_BS.pos(1));
+            BS.BF.update_state([2*pi*rand(1), pi*rand(1)]);
+            BS.compute_signal_power(); %this station is interfering, needed here to avoid errors
+            BS.sharedData.servingBS = to_next_BS;
         end
     end
     
     methods (Access = private)
-        function find_AoA_AoD(BS)
-            %AoA from the point of view of UE
-            pos_x = -BS.sharedData.UE.pos(1) + BS.pos(1);
-            pos_y = -BS.sharedData.UE.pos(2) + BS.pos(2);
-
-            if (pos_x >= 0 && pos_y >=0)
-                BS.AoD = atan(pos_y/pos_x);
-            elseif (pos_x < 0 && pos_y >=0)
-                BS.AoD = atan(pos_y/pos_x) + pi;
-            elseif (pos_x < 0 && pos_y < 0)
-                BS.AoD = atan(pos_y/pos_x) + pi;
-            else
-                BS.AoD = atan(pos_y/pos_x) + 2*pi;
-            end
+        function find_AoD(BS)
+            %for reference see DOC/BeamForming/angles.jpg
             
-            BS.AoA = pi-BS.AoD;
-        end
-        
-        function handin(BS)
-            if BS.PL < BS.sharedData.servingBS.PL
-                BS.sharedData.servingBS.handover(BS)
-                BS.sharedData.servingBS = BS;
-            end
+            %change point of view from the world origin to the BS's coord system
+            new_ue_pos = BS.sharedData.UE.pos - BS.pos;     
+            new_ue_pos = new_ue_pos / norm(new_ue_pos);
             
-        end
+            theta = acos(dot(new_ue_pos(1:2), [1, 0])); %theta > 0 always, use only xy coords
+            phi = acos(dot(new_ue_pos, [0,0,1])); %should be pi/2 <= phi < pi  because BS at least as tall as UE or more 
+            tmp = cross([1, 0, 0], [new_ue_pos(1), new_ue_pos(2), 0]);
+            s = sign(tmp(3));
+            
+            %find azimut angle (with respect to x axis, positive toward y axis)               
+            if theta <= pi/2 && s > 0
+                BS.AoD = [theta, phi];
+            elseif theta <= pi/2 && s < 0
+                BS.AoD = [-theta, phi];
+            elseif theta >= pi/2 && s > 0
+                BS.AoD = [theta, phi];
+            elseif theta >= pi/2 && s < 0
+                BS.AoD = [-theta, phi];
+            end                      
+        end               
         
-        function handover(BS, to_next_BS)
-            %to_next_BS %reserved for future use
-            BS.BF = compute_BF_vector(BS.ant_arr, 2*pi*rand(1)); %random steering, needed here to avoid errors
-            BS.GAIN = (abs(conj(BS.sharedData.UE.BF) * (BS.H) * (BS.BF).').^2); %this station is interfering, needed here to avoid errors
+        function handin(BS, dt)
+%             if BS.PL < BS.sharedData.servingBS.PL
+%                 BS.sharedData.servingBS.handover(BS)
+%                 BS.sharedData.servingBS = BS;
+%             end
+            
+%             outage_thresh = 10^( -5 /10);
+%             thermal_noise = 10^((-174+7)/10) * (BS.BW / BS.n );
+%             SNR = BS.signal_power_at_ue / thermal_noise;
+%             if ~isequal(BS, BS.sharedData.servingBS) && (SNR > outage_thresh)
+%                 minTTT = 0.3;  
+%                 %% see DOC/meanconntime_bias.jpg for reference
+%                 length = abs(BS.pos(2) - BS.sharedData.UE.pos(2)) * sin(pi/3) / sin(pi/6); %optimal  BS' cell **HALF** chord length relative to UE               
+%                 %delta = (BS.sharedData.UE.pos(1) - (BS.pos(1) - (length + 25)) )/ ((length + 25)*2 ); % -+25m tolerance
+%                 %bias = (BS.memory > 0) * 2 * (1 - delta) * (delta >= 0 && delta <= 1);
+%                 bias =  10 * ((BS.sharedData.UE.pos(1) - (BS.pos(1) - (length + 25))) > 0);
+%                 %%         
+%                 P = (BS.memory > 0) * BS.signal_power_at_ue * (1 + bias); %similar idea as presented in DOC/iswcs-symbiocity.pdf                 
+%                 if  P > BS.sharedData.servingBS.signal_power_at_ue && BS.TTT >= minTTT % BS.PL < BS.sharedData.servingBS.PL && BS.TTT >= 0.5 % 
+%                     BS.sharedData.servingBS.handover(BS) %ask the old BS to hand over the UE
+%                     BS.sharedData.servingBS = BS;
+%                     BS.TTT = 0;
+%                 elseif P > BS.sharedData.servingBS.signal_power_at_ue && BS.TTT < minTTT % BS.PL < BS.sharedData.servingBS.PL && BS.TTT < 0.5 % 
+%                     BS.TTT = BS.TTT + dt;
+%                 else
+%                     BS.TTT = 0;
+%                 end     
+%             end
+            
+            if ~isequal(BS, BS.sharedData.servingBS) && BS.sharedData.servingBS.memory <= 0
+                d1 = norm(BS.sharedData.servingBS.pos(1) - BS.sharedData.UE.pos(1));
+                d2 = norm(BS.pos(1) - BS.sharedData.UE.pos(1));
+                
+                if d1 > d2 && BS.memory > 0
+                    BS.sharedData.servingBS.handover(BS) %ask the old BS to hand over the UE                    
+                end
+            end
+        end                     
+                
+        function compute_signal_power(BS)
+            P_tx = 0.5; %Transmitting power [Watt]            
+            BS.signal_power_at_ue = P_tx * abs((BS.sharedData.UE.BF)' * ((BS.C) * (BS.BF) + BaseStation.cnoise(BS.sharedData.UE.ant_arr, 0.01)) )^2 / BS.PL;            
+        end
+    end
+    
+    methods (Static)
+        function n = cnoise(N, var)
+            %complex circular symmetric noise
+            n = sqrt(var/2) * (randn(N,1) + 1i*randn(N,1));            
         end
     end
     
